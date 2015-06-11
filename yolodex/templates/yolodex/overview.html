@@ -1,0 +1,21 @@
+{% extends "yolodex/base.html" %}
+
+{% load i18n %}
+
+{% block title %}{% blocktrans with name=realm.name %}Network for {{ name }}{% endblocktrans %}{% endblock %}
+
+{% block main %}
+  <h2>{{ realm.name }}</h2>
+
+  {% for type in realm.entitytype_set.all %}
+    {{ type }}
+  {% endfor %}
+
+  <ul>
+  {% for entity in realm.entity_set.all %}
+    <li>
+      <a href="{{ entity.get_absolute_url }}">{{ entity }}</a>
+    </li>
+  {% endfor %}
+  </ul>
+{% endblock %}
