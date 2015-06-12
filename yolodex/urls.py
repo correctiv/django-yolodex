@@ -14,7 +14,7 @@ entity_urls = [
         name='entity_detail'),
     url(r'^(?P<type>[\w-]+)/(?P<slug>[\w-]+)/graph\.json$',
         EntityNetworkView.as_view(),
-        name='entity_detail'),
+        name='entity_graph_json'),
 ]
 
 urlpatterns = patterns('', *entity_urls)
