@@ -22,6 +22,7 @@ class Network(object):
             'name': node.name,
             'url': node.get_absolute_url(),
             'type': node.type.slug,
+            'distance': node.distance,
             'data': node.data
         }
 

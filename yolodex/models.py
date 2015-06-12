@@ -60,16 +60,21 @@ class Entity(models.Model):
     def get_network(self, level=1):
         assert level < 4
         entities = set()
+        distance = 0
+        self.distance = 0
         entities.add(self)
         relations = set()
         current_level = level
         entity_lookups = [self.pk]
         while current_level > 0:
+            distance += 1
             rels = list(Relationship.objects.filter(
                 Q(source_id__in=entity_lookups) | Q(target_id__in=entity_lookups)
                 ).select_related('source', 'target'))
             new_entities = set([r.source for r in rels])
             new_entities |= set([r.target for r in rels])
+            for e in new_entities:
+                e.distance = distance
             relations |= set(rels)
             entity_lookups = [o.pk for o in new_entities]
             entities |= new_entities
