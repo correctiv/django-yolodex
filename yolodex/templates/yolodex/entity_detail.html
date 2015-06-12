@@ -8,114 +8,321 @@
   <h2>{{ object.name }}</h2>
 
   <p>{{ object.data }}</p>
-  {{ object.get_absolute_url }}
 
   <hr/>
-  <div id="network-{{ object.pk }}" style="height:400px"></div>
+  <div id="network-{{ object.pk }}" class="network-container" style="height:800px"></div>
+
+{% addtoblock "css" %}
+<style>
+  .network-group {
+    cursor: grab;
+  }
+  .node {
+    stroke: #fff;
+    stroke-width: 1.5px;
+    cursor: pointer;
+  }
+  .subject {
+    stroke-width: 4px;
+    stroke-dasharray: 1,1;
+    cursor: auto;
+  }
+
+  .link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 1px;
+    opacity: 0.5;
+  }
+
+  .subjectlink {
+    stroke: #000;
+    stroke-width: 1.5px;
+    opacity: 0.6;
+  }
+  .tooltip {
+    position: absolute;
+    text-align: center;
+    max-width: 300px;
+    padding: 8px;
+    font: 12px sans-serif;
+    background: #fff;
+    border: solid 1px #aaa;
+    pointer-events: none;
+  }
+
+</style>
+
+{% endaddtoblock %}
 
 {% addtoblock "js" %}
-  <script src="{% static "vendor/sigma/build/sigma.min.js" %}"></script>
-  <script src="{% static "vendor/sigma/build/plugins/sigma.parsers.json.min.js" %}"></script>
-  <script src="{% static "vendor/sigma/build/plugins/sigma.layout.forceAtlas2.min.js" %}"></script>
+  <script src="http://marvl.infotech.monash.edu/webcola/extern/d3.v3.js"></script>
+  <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
+
   <script>
     // $(window).load(function() {
-      var subjectID = "{{ object.id }}";
-      sigma.classes.graph.addMethod('neighbors', function(nodeId) {
-        var k,
-            neighbors = {},
-            index = this.allNeighborsIndex[nodeId] || {};
+      var subjectId = "{{ object.id }}";
+      var containerId = "network-{{ object.pk }}";
+      var container = d3.select('#' + containerId);
+      var width = $('#' + containerId).width();
+      var height = 800;
+      var nodeMouseDown = false;
+      var nodeRadius = 5;
+      var nodeRadiusFunc = d3.scale.sqrt().range([5, 20]);
 
-        for (k in index)
-          neighbors[k] = this.nodesIndex[k];
+      var tooltip = container.append("div")
+          .attr("class", "tooltip")
+          .style("opacity", 1e-6);
+      var tooltipShowing = false;
 
-        return neighbors;
-      });
+      function mousemove() {
+        if (!tooltipShowing) {
+          return
+        }
+        var b = tooltip.node().getBoundingClientRect()
+        var w = b.width;
+        var h = b.height;
+        tooltip
+          .style("left", (d3.event.pageX - w / 2) + "px")
+          .style("top", (d3.event.pageY - h - 15) + "px");
+      }
 
-      sigma.parsers.json( "./graph.json", {
-        container: 'network-{{ object.pk }}'
-      }, function(s){
+      function showTooltip(text) {
+        tooltipShowing = true;
+        tooltip.text(text)
+          .style('opacity', 1);
+      }
+      function hideTooltip(node) {
+        tooltipShowing = false;
+        tooltip.style('opacity', 1e-6);
+      }
 
-        s.settings({
-          edgeColor: '#ddd',
-          defaultEdgeColor: '#ddd',
-          labelSize: "proportional",
-          defaultNodeBorderColor: '#fff',
-          scalingMode: "outside"
-        });
+      var color = d3.scale.category20();
+      var zoom = d3.behavior.zoom();
+      var d3cola = cola.d3adaptor()
+          .linkDistance(function(d){
+            return nodeRadiusFunc(d.source.degree) + nodeRadiusFunc(d.target.degree) + 10;
+          })
+          .avoidOverlaps(true)
+          .symmetricDiffLinkLengths(10)
+          .size([width, height]);
 
-        // We first need to save the original colors of our
-        // nodes and edges, like this:
-        s.graph.nodes().forEach(function(n) {
-          n.x = Math.random();
-          n.y = Math.random();
-          n.label = n.name;
-          if (n.id === subjectID) {
-            n.color = 'red';
-          } else {
-            n.color = n.data.color || '#aaa'
+      function dragstart(d) {
+        console.log('start drag', d.name);
+        d.fixed = true;
+      }
+
+
+      var outer = container.append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("pointer-events", "all")
+        .on("mousemove", mousemove);
+
+      var svg = outer.append('g')
+        .attr('class', 'network-group')
+
+      var scaleFactor, translation
+      var zoomListener = d3.behavior.zoom()
+        .scaleExtent([1, 8])
+        .on('zoom', zoomHandler);
+
+      function zoomHandler(t, s) {
+        if (nodeMouseDown) { return; }
+        var vis = svg;
+        if (t) {
+          vis = svg.transition();
+        }
+        t = t || d3.event.translate
+        s = s || d3.event.scale
+        vis.attr("transform", "translate(" + t + ")scale(" + s + ")");
+      }
+      zoomListener(outer);
+      outer.on("dblclick.zoom", null);
+
+      function graphBounds() {
+          var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
+          svg.selectAll(".node").each(function(v) {
+              var r = nodeRadiusFunc(v.degree)
+              x = Math.min(x, v.x - r);
+              X = Math.max(X, v.x + r);
+              y = Math.min(y, v.y - r);
+              Y = Math.max(Y, v.y + r);
+          });
+          return { x: x, X: X, y: y, Y: Y };
+      }
+
+      function zoomToFit() {
+          var b = graphBounds();
+          var w = b.X - b.x, h = b.Y - b.y;
+          var cw = outer.attr("width"), ch = outer.attr("height");
+          var s = Math.min(cw / w, ch / h);
+          var tx = (-b.x * s + (cw / s - w) * s / 2), ty = (-b.y * s + (ch / s - h) * s / 2);
+          zoom.translate([tx, ty]).scale(s);
+          zoomHandler([tx, ty], s)
+      }
+
+
+      d3.json("./graph.json", function (error, graph) {
+        var linkMapping = {};
+        var idMapping = {};
+        var highestDegree = 0;
+        graph.nodes.forEach(function(n, i) {
+          n.subject = (n.id === subjectId);
+          if (n.subject) {
+            n.fixed = true;
+            n.x = width / 2;
+            n.y = height / 2;
           }
-          n.size = 1;
-          console.log(n.degree);
-          n.originalColor = n.color;
+          idMapping[n.id] = n;
         });
-        s.graph.edges().forEach(function(e) {
-          e.originalColor = e.color;
-        });
-
-        // When a node is clicked, we check for each node
-        // if it is a neighbor of the clicked one. If not,
-        // we set its color as grey, and else, it takes its
-        // original color.
-        // We do the same for the edges, and we only keep
-        // edges that have both extremities colored.
-        s.bind('clickNode', function(e) {
-          var nodeId = e.data.node.id,
-              toKeep = s.graph.neighbors(nodeId);
-          toKeep[nodeId] = e.data.node;
-
-          s.graph.nodes().forEach(function(n) {
-            if (toKeep[n.id])
-              n.color = n.originalColor;
-            else
-              n.color = '#00f';
-          });
-
-          s.graph.edges().forEach(function(e) {
-            if (toKeep[e.source] && toKeep[e.target])
-              e.color = e.originalColor;
-            else
-              e.color = '#00f';
-          });
-
-          // Since the data has been modified, we need to
-          // call the refresh method to make the colors
-          // update effective.
-          s.refresh();
-        });
-        //
-        // // When the stage is clicked, we just color each
-        // // node and edge with its original color.
-        s.bind('clickStage', function(e) {
-          s.graph.nodes().forEach(function(n) {
-            n.color = n.originalColor;
-          });
-
-          s.graph.edges().forEach(function(e) {
-            e.color = e.originalColor;
-          });
-
-          // Same as in the previous event:
-          s.refresh();
+        graph.edges.forEach(function(e) {
+          e.sourceId = e.source;
+          e.targetId = e.target;
+          var source = idMapping[e.sourceId];
+          var target = idMapping[e.targetId];
+          source.degree = source.degree || 0;
+          target.degree = target.degree || 0;
+          source.degree += 1;
+          target.degree += 1;
+          highestDegree = Math.max(highestDegree, source.degree);
+          highestDegree = Math.max(highestDegree, target.degree);
         });
 
-        s.refresh();
-        s.startForceAtlas2({
-          barnesHutOptimize: false
+        var shouldPruneEdge = function(edge) {
+          // Remove connection to self
+          if (edge.sourceId === edge.targetId) {
+            return true;
+          }
+
+          var source = idMapping[edge.sourceId];
+          var target = idMapping[edge.targetId];
+          var pruned = false;
+          if (source.distance > 0 &&
+              source.degree > 20 &&
+              target.distance > 1) {
+            pruned = true
+          }
+          if (target.distance > 0 &&
+              target.degree > 20 &&
+              source.distance > 1) {
+            pruned = true;
+          }
+          return pruned;
+        }
+
+        var shouldPruneNode = function(node) {
+          if (node.pruned && node.distance > 1) {
+            return true;
+          }
+          return false;
+        };
+
+        graph.edges = graph.edges.filter(function(e) {
+          return !shouldPruneEdge(e);
         });
+
+        graph.edges.forEach(function(e) {
+          var source = idMapping[e.sourceId];
+          var target = idMapping[e.targetId];
+          source.rdegree = source.rdegree || 0;
+          target.rdegree = target.rdegree || 0;
+          source.rdegree += 1;
+          target.rdegree += 1;
+        });
+        graph.nodes = graph.nodes.filter(function(n){
+          return !!n.rdegree;
+        });
+
+        graph.nodes.forEach(function(n, i){
+          linkMapping[n.id] = i;
+        });
+        graph.edges.forEach(function(e) {
+          e.source = linkMapping[e.source];
+          e.target = linkMapping[e.target];
+        });
+
+        nodeRadiusFunc.domain([1, highestDegree]);
+
+        d3cola
+          .nodes(graph.nodes)
+          .links(graph.edges)
+          .start(20, 20, 20);
+
+        var link = svg.selectAll(".link")
+            .data(graph.edges)
+          .enter().append('svg:path')
+            .classed('link', true)
+            .classed('subjectlink', function(d){
+              return d.sourceId === subjectId || d.targetId === subjectId;
+            })
+            .on('mouseover', function(d){
+              showTooltip(d.data.label + ' -> ' + d.target.name);
+            })
+            .on('mouseout', function(d){
+              hideTooltip(d);
+            })
+
+        var node = svg.selectAll(".node")
+            .data(graph.nodes)
+          .enter().append("circle")
+            .classed("node", true)
+            .classed("subject", function(d){ return d.subject; })
+            .attr("r", function(d) {
+              return nodeRadiusFunc(d.degree);
+            })
+            .style("fill", function (d) { return d.data.color; })
+            .style("stroke", function (d) {
+              if (d.id === subjectId) {
+                return d.data.color;
+              }
+              return 'auto';
+            })
+            .on('mouseover', function(d){
+              showTooltip(d.name);
+            })
+            .on('mouseout', function(d){
+              hideTooltip(d);
+            })
+            .on("mousedown", function (d) {
+              dragstart(d);
+              nodeMouseDown = true;
+            })
+            .on("mouseup", function () { nodeMouseDown = false; })
+
+            .on('dblclick', function(d){
+              if (d.id !== subjectId) {
+                document.location.href = d.url;
+              }
+            })
+            .call(d3cola.drag);
+        function tick(){
+            // draw directed edges with proper padding from node centers
+            link.attr('d', function (d) {
+              var deltaX = d.target.x - d.source.x,
+                deltaY = d.target.y - d.source.y,
+                dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
+                normX = deltaX / dist,
+                normY = deltaY / dist,
+                sourcePadding = nodeRadiusFunc(d.source.degree) + 1,
+                targetPadding = nodeRadiusFunc(d.target.degree) + 1,
+                sourceX = d.source.x + (sourcePadding * normX),
+                sourceY = d.source.y + (sourcePadding * normY),
+                targetX = d.target.x - (targetPadding * normX),
+                targetY = d.target.y - (targetPadding * normY);
+              return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
+            });
+
+            node.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+        }
+        d3cola.on("tick", tick);
         window.setTimeout(function(){
-          s.killForceAtlas2();
-        }, 5000);
+          zoomToFit();
+        }, 500);
+
       });
+
   </script>
 {% endaddtoblock %}
 
