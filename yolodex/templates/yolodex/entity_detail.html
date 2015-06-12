@@ -1,21 +1,29 @@
 {% extends "yolodex/base.html" %}
 
-{% load i18n static sekizai_tags %}
+{% load i18n static sekizai_tags markdown_deux_tags yolodex %}
 
 {% block title %}{{ object.name }} - {{ realm.name }}{% endblock %}
 
 {% block main %}
   <h2>{{ object.name }}</h2>
+  {{ rendered|markdown }}
+  <hr/>
 
-  <p>{{ object.data }}</p>
+  <ul class="list-unstyled" id="network-{{ object.pk }}-types" style="position: absolute">
+  </ul>
+
+  <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden"></div>
 
   <hr/>
-  <div id="network-{{ object.pk }}" class="network-container" style="height:800px"></div>
-
+  <ul>
+  {% for edge in network.edges %}
+    <li>{% verbify edge object %}</li>
+  {% endfor %}
+  </ul>
 {% addtoblock "css" %}
 <style>
-  .network-group {
-    cursor: grab;
+  .svg-network {
+    cursor: move;
   }
   .node {
     stroke: #fff;
@@ -32,13 +40,18 @@
     fill: none;
     stroke: #ccc;
     stroke-width: 1px;
-    opacity: 0.5;
+    opacity: 0.7;
+  }
+  .node-icon {
+    pointer-events: none;
+    font-family: 'Glyphicons Halflings';
+    fill: none;
   }
 
   .subjectlink {
     stroke: #000;
     stroke-width: 1.5px;
-    opacity: 0.6;
+    opacity: 0.8;
   }
   .tooltip {
     position: absolute;
@@ -62,13 +75,27 @@
   <script>
     // $(window).load(function() {
       var subjectId = "{{ object.id }}";
+      var legendContainer = 'network-{{ object.pk }}-types';
       var containerId = "network-{{ object.pk }}";
+      var types = {{ types|safe }};
+
+      for (var type in types.node) {
+        type = types.node[type];
+        var icon = type.settings.icon;
+        icon = String.fromCodePoint(parseInt(icon.substring(1), 16));
+        $('#' + legendContainer).append(
+          '<li><span class="glyphicon">' + icon + '</span>' + type.name + '</li>'
+        )
+      }
+
       var container = d3.select('#' + containerId);
       var width = $('#' + containerId).width();
       var height = 800;
       var nodeMouseDown = false;
       var nodeRadius = 5;
-      var nodeRadiusFunc = d3.scale.sqrt().range([5, 20]);
+      var nodeRadiusFunc = d3.scale.sqrt().range([10, 25]);
+      var linkSizeFunc = d3.scale.linear().range([3, 8]).domain([1, 10]);
+      var fontSizeFunc = d3.scale.linear().range([8, 16]);
 
       var tooltip = container.append("div")
           .attr("class", "tooltip")
@@ -101,19 +128,14 @@
       var zoom = d3.behavior.zoom();
       var d3cola = cola.d3adaptor()
           .linkDistance(function(d){
-            return nodeRadiusFunc(d.source.degree) + nodeRadiusFunc(d.target.degree) + 10;
+            return nodeRadiusFunc(d.source.degree) * 2.2 + nodeRadiusFunc(d.target.degree) * 2.2 + 10;
           })
-          .avoidOverlaps(true)
+          // .avoidOverlaps(true)
           .symmetricDiffLinkLengths(10)
           .size([width, height]);
 
-      function dragstart(d) {
-        console.log('start drag', d.name);
-        d.fixed = true;
-      }
-
-
       var outer = container.append("svg")
+        .classed('svg-network', true)
         .attr("width", width)
         .attr("height", height)
         .attr("pointer-events", "all")
@@ -122,23 +144,61 @@
       var svg = outer.append('g')
         .attr('class', 'network-group')
 
-      var scaleFactor, translation
+      var scaleFactor = 1;
+      var translation = [0,0];
+      var tick = function(){};
+      var xScale = d3.scale.linear()
+       .domain([0, width])
+       .range([0, width]);
+
+      var yScale = d3.scale.linear()
+        .domain([0, height])
+        .range([0, height]);
+
       var zoomListener = d3.behavior.zoom()
-        .scaleExtent([1, 8])
+        .scaleExtent([0.2, 8])
+        .x(xScale)
+        .y(yScale)
         .on('zoom', zoomHandler);
 
       function zoomHandler(t, s) {
         if (nodeMouseDown) { return; }
-        var vis = svg;
-        if (t) {
-          vis = svg.transition();
-        }
         t = t || d3.event.translate
         s = s || d3.event.scale
-        vis.attr("transform", "translate(" + t + ")scale(" + s + ")");
+        scaleFactor = s;
+        translation = t;
+        tick();
       }
       zoomListener(outer);
       outer.on("dblclick.zoom", null);
+
+      var drag = d3cola.drag()
+        .origin(function(d) { return [d.x, d.y]; })
+        .on("dragstart.d3adaptor", dragstarted)
+        .on("drag.d3adaptor", dragged)
+        .on("dragend.d3adaptor", dragended);
+
+      function dragstarted(d){
+        d3.event.sourceEvent.stopPropagation();
+        d3.select(this).classed("dragging", true);
+         //stop ticks while dragging
+         d3cola.stop()
+      }
+      function dragged(d){
+        d.wasDragged = true;
+
+        var mouse = d3.mouse(svg.node());
+
+        d.px = d.x = xScale.invert(mouse[0]);
+        d.py = d.y = yScale.invert(mouse[1]);
+        // d3cola.resume();
+        tick();//re-position this node and any links
+      }
+      function dragended(d){
+        d.fixed = true;
+        d3.select(this).classed("dragging", false);
+        d3cola.resume();
+      }
 
       function graphBounds() {
           var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
@@ -158,14 +218,44 @@
           var cw = outer.attr("width"), ch = outer.attr("height");
           var s = Math.min(cw / w, ch / h);
           var tx = (-b.x * s + (cw / s - w) * s / 2), ty = (-b.y * s + (ch / s - h) * s / 2);
-          zoom.translate([tx, ty]).scale(s);
-          zoomHandler([tx, ty], s)
       }
 
+      function getNodeTypeSettings(d, n) {
+        var t = types.node[d.type];
+        if (!t) {
+          return {};
+        }
+        var val = t.settings[n] || '';
+        if (val.indexOf('@') === 0) {
+          return d.data[val.substring(1)];
+        }
+        return val;
+      }
+
+      function getNodeIcon(d) {
+        var icon = getNodeTypeSettings(d, 'icon');
+        if (icon.indexOf('\\') === 0) {
+          return String.fromCodePoint(parseInt(icon.substring(1), 16))
+        }
+        return icon;
+      }
+
+      function getNodeIconColor(d) {
+        return getNodeTypeSettings(d, 'icon-color');
+      }
+
+      function getNodeColor(d) {
+        return getNodeTypeSettings(d, 'color');
+      }
+
+      function getNodeStrokeColor(d){
+        return getNodeTypeSettings(d, 'stroke-color');
+      }
 
       d3.json("./graph.json", function (error, graph) {
         var linkMapping = {};
         var idMapping = {};
+        var distinctEdge = {};
         var highestDegree = 0;
         graph.nodes.forEach(function(n, i) {
           n.subject = (n.id === subjectId);
@@ -176,7 +266,7 @@
           }
           idMapping[n.id] = n;
         });
-        graph.edges.forEach(function(e) {
+        graph.edges = graph.edges.filter(function(e) {
           e.sourceId = e.source;
           e.targetId = e.target;
           var source = idMapping[e.sourceId];
@@ -187,6 +277,14 @@
           target.degree += 1;
           highestDegree = Math.max(highestDegree, source.degree);
           highestDegree = Math.max(highestDegree, target.degree);
+          var edgeKey = [e.sourceId, e.targetId].sort().join('-');
+          var prev = distinctEdge[edgeKey];
+          if (prev !== undefined) {
+            distinctEdge[edgeKey] += 1;
+            return false;
+          }
+          distinctEdge[edgeKey] = 1;
+          return true;
         });
 
         var shouldPruneEdge = function(edge) {
@@ -238,11 +336,14 @@
           linkMapping[n.id] = i;
         });
         graph.edges.forEach(function(e) {
+          var edgeKey = [e.sourceId, e.targetId].sort().join('-');
+          e.weight = distinctEdge[edgeKey];
           e.source = linkMapping[e.source];
           e.target = linkMapping[e.target];
         });
 
         nodeRadiusFunc.domain([1, highestDegree]);
+        fontSizeFunc.domain([1, highestDegree]);
 
         d3cola
           .nodes(graph.nodes)
@@ -256,6 +357,9 @@
             .classed('subjectlink', function(d){
               return d.sourceId === subjectId || d.targetId === subjectId;
             })
+            .attr('stroke-width', function(d){
+              return linkSizeFunc(d.weight);
+            })
             .on('mouseover', function(d){
               showTooltip(d.data.label + ' -> ' + d.target.name);
             })
@@ -263,20 +367,24 @@
               hideTooltip(d);
             })
 
-        var node = svg.selectAll(".node")
+        var nodeContainer = svg.selectAll(".node")
             .data(graph.nodes)
-          .enter().append("circle")
+          .enter().append("g")
+            .classed("nodecontainer", true)
+
+        var node = nodeContainer
+          .append('circle')
             .classed("node", true)
             .classed("subject", function(d){ return d.subject; })
             .attr("r", function(d) {
               return nodeRadiusFunc(d.degree);
             })
-            .style("fill", function (d) { return d.data.color; })
+            .style("fill", function (d) { return getNodeColor(d); })
             .style("stroke", function (d) {
               if (d.id === subjectId) {
-                return d.data.color;
+                return getNodeStrokeColor(d);
               }
-              return 'auto';
+              return getNodeStrokeColor(d);
             })
             .on('mouseover', function(d){
               showTooltip(d.name);
@@ -285,41 +393,73 @@
               hideTooltip(d);
             })
             .on("mousedown", function (d) {
-              dragstart(d);
+              d.wasDragged = false;
               nodeMouseDown = true;
             })
-            .on("mouseup", function () { nodeMouseDown = false; })
-
-            .on('dblclick', function(d){
+            .on("mouseup", function () {
+              nodeMouseDown = false;
+            })
+            .on('click', function(d){
+              if (d.wasDragged) {
+                return;
+              }
               if (d.id !== subjectId) {
                 document.location.href = d.url;
               }
             })
-            .call(d3cola.drag);
-        function tick(){
-            // draw directed edges with proper padding from node centers
-            link.attr('d', function (d) {
-              var deltaX = d.target.x - d.source.x,
-                deltaY = d.target.y - d.source.y,
-                dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
-                normX = deltaX / dist,
-                normY = deltaY / dist,
-                sourcePadding = nodeRadiusFunc(d.source.degree) + 1,
-                targetPadding = nodeRadiusFunc(d.target.degree) + 1,
-                sourceX = d.source.x + (sourcePadding * normX),
-                sourceY = d.source.y + (sourcePadding * normY),
-                targetX = d.target.x - (targetPadding * normX),
-                targetY = d.target.y - (targetPadding * normY);
-              return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
-            });
+            .call(drag);
 
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
+        nodeContainer.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .classed('node-icon', true)
+          .style("stroke", function (d) {
+            return getNodeIconColor(d);
+          })
+          .on('mouseover', function(d){
+            showTooltip(d.name);
+          })
+          .on('mouseout', function(d){
+            hideTooltip(d);
+          })
+          .attr('font-size', function(d) {
+            return fontSizeFunc(d.degree) + 'px';
+          })
+          .text(function(d) {
+            return getNodeIcon(d);
+          });
+
+        tick = function(){
+          // draw directed edges with proper padding from node centers
+          link.attr('d', function (d) {
+            // var sx = translation[0] + scaleFactor * d.source.x,
+            // sy = translation[1] + scaleFactor * d.source.y,
+            // tx = translation[0] + scaleFactor * d.target.x,
+            // ty = translation[1] + scaleFactor * d.target.y;
+            var sx = xScale(d.source.x),
+            sy = yScale(d.source.y),
+            tx = xScale(d.target.x),
+            ty = yScale(d.target.y);
+            var deltaX = tx - sx,
+              deltaY = ty - sy,
+              dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
+              normX = deltaX / dist,
+              normY = deltaY / dist,
+              sourcePadding = nodeRadiusFunc(d.source.degree) + 1,
+              targetPadding = nodeRadiusFunc(d.target.degree) + 1,
+              sourceX = sx + (sourcePadding * normX),
+              sourceY = sy + (sourcePadding * normY),
+              targetX = tx - (targetPadding * normX),
+              targetY = ty - (targetPadding * normY);
+            return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
+          });
+
+          nodeContainer.attr('transform', function(d){
+            var t = [xScale(d.x), yScale(d.y)];
+            return 'translate(' + t + ')';
+          });
         }
         d3cola.on("tick", tick);
-        window.setTimeout(function(){
-          zoomToFit();
-        }, 500);
 
       });
 

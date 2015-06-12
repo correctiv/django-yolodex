@@ -1,3 +1,6 @@
+import json
+
+from django.template import Template, Context
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.generic import DetailView, TemplateView
@@ -45,7 +48,16 @@ class EntityDetailView(BaseRealmMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(EntityDetailView, self).get_context_data(**kwargs)
-        context['network'] = self.object.get_network(level=1)
+
+        obj = self.object
+        context['network'] = obj.get_network(level=1, include_self=False)
+
+        t = Template(obj.type.template)
+        rendered = t.render(Context({'self': obj, 'realm': self.realm}))
+        context['rendered'] = rendered
+
+        types = self.realm.get_types()
+        context['types'] = json.dumps(types)
         return context
 
 
