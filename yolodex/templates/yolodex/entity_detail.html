@@ -69,8 +69,8 @@
 {% endaddtoblock %}
 
 {% addtoblock "js" %}
-  <script src="http://marvl.infotech.monash.edu/webcola/extern/d3.v3.js"></script>
-  <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
+  <script src="{% static "vendor/d3/d3.min.js" %}"></script>
+  <script src="{% static "vendor/webcola/WebCola/cola.min.js" %}"></script>
 
   <script>
     // $(window).load(function() {
