@@ -6,6 +6,10 @@ from .views import (
     EntityDetailView,
     EntityNetworkView,
 )
+from .api_views import YolodexRouter, EntityViewSet
+
+router = YolodexRouter()
+router.register(r'api/entity', EntityViewSet, 'entity')
 
 entity_urls = [
     url(r'^$', RealmView.as_view(), name='overview'),
@@ -17,4 +21,6 @@ entity_urls = [
         name='entity_graph_json'),
 ]
 
-urlpatterns = patterns('', *entity_urls)
+urlpatterns = router.urls
+
+urlpatterns += patterns('', *entity_urls)

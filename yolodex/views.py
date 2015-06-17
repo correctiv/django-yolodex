@@ -1,7 +1,7 @@
 import json
 
 from django.template import Template, Context
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.generic import DetailView, TemplateView
 from django.core.urlresolvers import resolve
@@ -46,6 +46,15 @@ class RealmView(BaseRealmMixin, TemplateView):
 class EntityDetailView(BaseRealmMixin, DetailView):
     model = Entity
 
+    def get(self, request, *args, **kwargs):
+        resp = super(EntityDetailView, self).get(request, *args, **kwargs)
+
+        obj = self.object
+        if obj.type.slug != self.kwargs['type']:
+            return redirect(obj)
+
+        return resp
+
     def get_context_data(self, **kwargs):
         context = super(EntityDetailView, self).get_context_data(**kwargs)
 
@@ -59,14 +68,3 @@ class EntityDetailView(BaseRealmMixin, DetailView):
         types = self.realm.get_types()
         context['types'] = json.dumps(types)
         return context
-
-
-class EntityNetworkView(EntityDetailView):
-    def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        try:
-            level = min(int(request.GET.get('level', 2)), 2)
-        except ValueError:
-            level = 2
-        network = self.object.get_network(level=level)
-        return JsonResponse(network.to_dict())
