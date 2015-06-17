@@ -87,11 +87,12 @@ class Entity(models.Model):
         relations = set()
         current_level = level
         entity_lookups = [self.pk]
+        new_entities = set(entity_lookups)
         while current_level > 0:
             distance += 1
             rels = list(Relationship.objects.filter(
-                Q(source_id__in=entity_lookups) | Q(target_id__in=entity_lookups)
-                ).select_related('source', 'target'))
+                Q(source_id__in=new_entities) | Q(target_id__in=new_entities)
+                ).distinct('id').select_related('source', 'target'))
             new_entities = set([r.source for r in rels])
             new_entities |= set([r.target for r in rels])
             for e in new_entities:
