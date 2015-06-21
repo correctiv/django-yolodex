@@ -132,6 +132,7 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
      //stop ticks while dragging
      d3cola.stop();
   }
+
   function dragged(d){
     d.wasDragged = true;
 
@@ -278,7 +279,7 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
       .links(graph.edges)
       .start(20, 20, 20);
 
-    var link = svg.selectAll(".link")
+    var links = svg.selectAll(".link")
         .data(graph.edges)
       .enter().append('svg:path')
         .classed('link', true)
@@ -300,7 +301,7 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
       .enter().append("g")
         .classed("nodecontainer", true);
 
-    var node = nodeContainer
+    var nodes = nodeContainer
       .append('circle')
         .classed("node", true)
         .classed("subject", function(d){ return d.subject; })
@@ -316,9 +317,11 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
         })
         .on('mouseover', function(d){
           showTooltip(d.name);
+          highlightConnections(d);
         })
         .on('mouseout', function(d){
           hideTooltip(d);
+          unHighlightConnections(d);
         })
         .on("mousedown", function (d) {
           d.wasDragged = false;
@@ -357,9 +360,34 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
         return getNodeIcon(d);
       });
 
+    function highlightConnections(d) {
+      graph.nodes.forEach(function(n) { n.highlighted = false; });
+      d.highlighted = true;
+      graph.edges.forEach(function(e) {
+        e.highlighted = false;
+        if (e.sourceId === d.id) {
+          idMapping[e.targetId].highlighted = true;
+          e.highlighted = true;
+        }
+        else if (e.targetId === d.id) {
+          idMapping[e.sourceId].highlighted = true;
+          e.highlighted = true;
+        }
+      });
+      svg.classed('highlighting', true);
+      d3.selectAll('.nodecontainer').classed('highlighted', function(d){ return d.highlighted; });
+      d3.selectAll('.link').classed('highlighted', function(d){ return d.highlighted; });
+    }
+
+    function unHighlightConnections(d) {
+      svg.classed('highlighting', false);
+      d3.selectAll('.nodecontainer').classed('highlighted', false);
+      d3.selectAll('.link').classed('highlighted', false);
+    }
+
     tick = function(){
       // draw directed edges with proper padding from node centers
-      link.attr('d', function (d) {
+      links.attr('d', function (d) {
         // var sx = translation[0] + scaleFactor * d.source.x,
         // sy = translation[1] + scaleFactor * d.source.y,
         // tx = translation[0] + scaleFactor * d.target.x,

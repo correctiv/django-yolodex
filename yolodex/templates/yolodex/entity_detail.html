@@ -7,14 +7,12 @@
 {% block main %}
   <h2>{{ object.name }}</h2>
   {{ rendered|markdown }}
-  <hr/>
 
   <ul class="list-unstyled" id="network-{{ object.pk }}-types" style="position: absolute">
   </ul>
 
   <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden"></div>
 
-  <hr/>
   <ul>
   {% for edge in network.edges %}
     <li>{% verbify edge object %}</li>
@@ -22,6 +20,9 @@
   </ul>
 {% addtoblock "css" %}
 <style>
+  .network-container {
+    padding: 5px;
+  }
   .svg-network {
     cursor: move;
   }
@@ -29,6 +30,12 @@
     stroke: #fff;
     stroke-width: 1.5px;
     cursor: pointer;
+  }
+  .highlighting .nodecontainer {
+    opacity: 0.2;
+  }
+  .highlighting .nodecontainer.highlighted {
+    opacity: 1;
   }
   .subject {
     stroke-width: 4px;
@@ -42,6 +49,12 @@
     stroke-width: 2px;
     opacity: 0.7;
     stroke-linejoin: miter;
+  }
+  .highlighting .link {
+    opacity: 0.2;
+  }
+  .highlighting .link.highlighted {
+    opacity: 1;
   }
   .node-icon {
     pointer-events: none;
