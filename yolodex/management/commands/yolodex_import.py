@@ -10,7 +10,7 @@ def get_from_cache_or_create(type_slug, klass, cache, realm):
     if type_slug in cache:
         typ = cache[type_slug]
     else:
-        typ = klass.objects.filter(translations__slug=slugify(type_slug))
+        typ = klass.objects.filter(realms=realm, translations__slug=slugify(type_slug))
         if typ:
             typ = typ[0]
         else:
