@@ -1,14 +1,6 @@
-function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
-
-  for (var type in types.node) {
-    type = types.node[type];
-    var icon = type.settings.icon;
-    icon = String.fromCodePoint(parseInt(icon.substring(1), 16));
-    $('#' + legendContainer).append(
-      '<li><span class="glyphicon">' + icon + '</span>' + type.name + '</li>'
-    );
-  }
-
+function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options) {
+  options = options || {};
+  var types;
   var container = d3.select('#' + containerId);
   var width = $('#' + containerId).width();
   var height = Math.floor(width * 0.5);
@@ -88,7 +80,10 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
     tick();
   }
   zoomListener(outer);
-  outer.on("dblclick.zoom", null);
+  outer.on("dblclick.zoom", null)
+    .on('dblclick', function(){
+      zoomToFit();
+    });
 
   function graphBounds() {
       var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
@@ -161,10 +156,14 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
     return val;
   }
 
+  function getFontIcon(icon){
+    return String.fromCodePoint(parseInt(icon.substring(1), 16));
+  }
+
   function getNodeIcon(d) {
     var icon = getNodeTypeSettings(d, 'icon');
     if (icon.indexOf('\\') === 0) {
-      return String.fromCodePoint(parseInt(icon.substring(1), 16));
+      return getFontIcon(icon);
     }
     return icon;
   }
@@ -182,6 +181,21 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
   }
 
   d3.json(graphUrl, function (error, graph) {
+
+    types = graph.types;
+    if (types) {
+      for (var type in types.node) {
+        type = types.node[type];
+        var icon = type.settings.icon;
+        icon = getFontIcon(icon);
+        $('#' + legendContainer).append(
+          '<li><span class="glyphicon">' + icon + '</span>' + type.name + '</li>'
+        );
+      }
+    } else {
+      types = {};
+    }
+
     var linkMapping = {};
     var idMapping = {};
     var distinctEdge = {};
@@ -200,6 +214,9 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
       e.targetId = e.target;
       var source = idMapping[e.sourceId];
       var target = idMapping[e.targetId];
+      if (source === undefined || target === undefined) {
+        return false;
+      }
       source.degree = source.degree || 0;
       target.degree = target.degree || 0;
       source.degree += 1;
@@ -310,7 +327,7 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
         })
         .style("fill", function (d) { return getNodeColor(d); })
         .style("stroke", function (d) {
-          if (d.id === subjectId) {
+          if (d.subject) {
             return getNodeStrokeColor(d);
           }
           return getNodeStrokeColor(d);
@@ -334,7 +351,7 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
           if (d.wasDragged) {
             return;
           }
-          if (d.id !== subjectId) {
+          if (!d.subject) {
             document.location.href = d.url;
           }
         })
@@ -359,6 +376,22 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
       .text(function(d) {
         return getNodeIcon(d);
       });
+    nodeContainer.each(function(d){
+      if (!(d.subject || parseInt(getNodeTypeSettings(d, 'show-label')))) {
+        return;
+      }
+      var el = d3.select(this);
+      el.append('text')
+        .classed('node-label', true)
+        .attr('text-anchor', 'middle')
+        .attr('dy', function(d){ return nodeRadiusFunc(d.degree); })
+        .attr('font-size', function(d) {
+          return (fontSizeFunc(d.degree)) + 'px';
+        })
+        .text(function(d) {
+          return d.name;
+        });
+    });
 
     function highlightConnections(d) {
       graph.nodes.forEach(function(n) { n.highlighted = false; });
@@ -415,6 +448,39 @@ function EntityGraph(subjectId, legendContainer, containerId, types, graphUrl) {
         return 'translate(' + t + ')';
       });
     };
+
+    function coordBounds(arr) {
+      var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
+      arr.forEach(function(n){
+        if (n.x !== undefined) {
+          x = Math.min(x, n.x);
+          y = Math.min(y, n.y);
+          X = Math.max(X, n.x);
+          Y = Math.max(Y, n.y);
+        }
+      });
+      return {x: x, y: y, X: X, Y: Y};
+    }
+
+    function moveToCoords() {
+      var cb = coordBounds(graph.nodes.map(function(d){
+        return {x: d.data.x, y: d.data.y};
+      }));
+      graph.nodes.forEach(function(n){
+        if (n.data.x !== undefined) {
+          n.fixed = true;
+          n.x = (n.data.x - cb.x) / (cb.X - cb.x) * width;
+          n.y = (-n.data.y + cb.y) / (cb.Y - cb.y) * height;
+        }
+      });
+    }
+
+    if (options.respectCoords) {
+      tick();
+      moveToCoords();
+    }
+
+
     d3cola.on("tick", tick);
     window.setTimeout(function(){
       zoomToFit(true);
