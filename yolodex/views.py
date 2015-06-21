@@ -1,12 +1,11 @@
 import json
 
 from django.template import Template, Context
-from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
-from django.views.generic import DetailView, TemplateView
+from django.shortcuts import get_object_or_404, Http404, redirect
+from django.views.generic import DetailView, ListView, TemplateView
 from django.core.urlresolvers import resolve
 
-from .models import Realm, Entity
+from .models import Realm, Entity, EntityType
 
 
 def get_current_app(request):
@@ -43,6 +42,27 @@ class RealmView(BaseRealmMixin, TemplateView):
     template_name = 'yolodex/overview.html'
 
 
+class EntityListView(BaseRealmMixin, ListView):
+    model = Entity
+    paginate_by = 50
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.type = EntityType.objects.translated(slug=kwargs['type']).get()
+        except EntityType.DoesNotExist:
+            raise Http404
+        return super(EntityListView, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = super(EntityListView, self).get_queryset()
+        return qs.filter(type=self.type).order_by('name')
+
+    def get_context_data(self, **kwargs):
+        ctx = super(EntityListView, self).get_context_data(**kwargs)
+        ctx['type'] = self.type
+        return ctx
+
+
 class EntityDetailView(BaseRealmMixin, DetailView):
     model = Entity
 
@@ -65,6 +85,4 @@ class EntityDetailView(BaseRealmMixin, DetailView):
         rendered = t.render(Context({'self': obj, 'realm': self.realm}))
         context['rendered'] = rendered
 
-        types = self.realm.get_types()
-        context['types'] = json.dumps(types)
         return context

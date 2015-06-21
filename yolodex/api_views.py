@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework.routers import Route, DynamicDetailRoute, SimpleRouter
 from rest_framework.decorators import detail_route
 
-from .models import Realm, Entity
+from .models import Realm, Entity, EntityType
+from .network import make_network, undirected_comp
 from .views import get_current_app
 
 
@@ -44,6 +45,12 @@ class EntitySerializer(serializers.ModelSerializer):
         model = Entity
 
 
+class TypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = EntityType
+
+
 class RealmApiMixin(object):
     permission_classes = ()
     authentication_classes = ()
@@ -71,4 +78,39 @@ class EntityViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         user belongs to.
         """
         obj = self.get_object()
-        return Response(obj.get_network(level=2).to_dict())
+        realm = self.get_realm(request)
+        return Response(obj.get_network(level=2).to_dict(realm=realm))
+
+
+class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
+    """
+    A viewset that provides the standard actions
+    """
+    serializer_class = EntitySerializer
+
+    def get_queryset(self):
+        realm = self.get_realm(self.request)
+        return realm.entitytype_set.all()
+
+    def make_entity_filter(self, obj):
+        def entity_filter(entity, rels):
+            connectedness = 0
+            for r in rels:
+                if undirected_comp(
+                        lambda a, b: a == entity and b.type_id == obj.pk, r):
+                    connectedness += 1
+            return connectedness > 1
+        return entity_filter
+
+    @detail_route()
+    def network(self, request, **kwargs):
+        """
+        Returns a list of all the group names that the given
+        user belongs to.
+        """
+        obj = self.get_object()
+        realm = self.get_realm(request)
+        qs = Entity.objects.filter(realm=realm, type=obj)
+        entity_filter = self.make_entity_filter(obj)
+        network = make_network(qs, level=1, entity_filter=entity_filter)
+        return Response(network.to_dict(realm=realm))
