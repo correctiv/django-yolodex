@@ -8,7 +8,7 @@ from django.template import Template, Context
 from django_hstore import hstore
 from parler.models import TranslatableModel, TranslatedFields
 
-from .network import Network
+from .network import make_network
 
 
 @python_2_unicode_compatible
@@ -78,30 +78,7 @@ class Entity(models.Model):
         }, current_app=self.realm.slug)
 
     def get_network(self, level=1, include_self=True):
-        assert level < 4
-        entities = set()
-        distance = 0
-        self.distance = 0
-        if not include_self:
-            entities.add(self)
-        relations = set()
-        current_level = level
-        entity_lookups = [self.pk]
-        new_entities = set(entity_lookups)
-        while current_level > 0:
-            distance += 1
-            rels = list(Relationship.objects.filter(
-                Q(source_id__in=new_entities) | Q(target_id__in=new_entities)
-                ).distinct('id').select_related('source', 'target'))
-            new_entities = set([r.source for r in rels])
-            new_entities |= set([r.target for r in rels])
-            for e in new_entities:
-                e.distance = distance
-            relations |= set(rels)
-            entity_lookups = [o.pk for o in new_entities]
-            entities |= new_entities
-            current_level -= 1
-        return Network(entities, relations)
+        return make_network([self], level=level, include_self=include_self)
 
 
 class RelationshipType(TranslatableModel):
