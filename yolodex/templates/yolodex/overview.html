@@ -1,21 +1,45 @@
 {% extends "yolodex/base.html" %}
 
-{% load i18n %}
+{% load i18n static sekizai_tags markdown_deux_tags %}
 
 {% block title %}{% blocktrans with name=realm.name %}Network for {{ name }}{% endblocktrans %}{% endblock %}
 
 {% block main %}
   <h2>{{ realm.name }}</h2>
 
-  {% for type in realm.entitytype_set.all %}
-    {{ type }}
-  {% endfor %}
+  <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden"></div>
 
   <ul>
-  {% for entity in realm.entity_set.all %}
+  {% for type in realm.entitytype_set.all %}
     <li>
-      <a href="{{ entity.get_absolute_url }}">{{ entity }}</a>
+      <a href="{% url 'yolodex:entity_list' type=type.slug %}">
+        {{ type.name }}
+      </a>
     </li>
   {% endfor %}
   </ul>
+
+  {% addtoblock "css" %}
+    <link rel="stylesheet" href="{% static "css/yolodex/network.css" %}" media="screen" charset="utf-8">
+  {% endaddtoblock %}
+
+  {% addtoblock "js" %}
+    <script src="{% static "vendor/d3/d3.min.js" %}"></script>
+    <script src="{% static "vendor/webcola/WebCola/cola.min.js" %}"></script>
+    <script src="{% static "js/yolodex/entitygraph.js" %}"></script>
+
+    <script>
+      $(window).load(function() {
+        var subjectId = undefined;
+        var legendContainer = 'network-{{ object.pk }}-types';
+        var containerId = "network-{{ object.pk }}";
+        var graphUrl = '{% url 'yolodex:entitytype-network' pk=3 %}';
+
+        EntityGraph(subjectId, legendContainer, containerId, graphUrl, {
+          respectCoords: true
+        });
+      });
+    </script>
+  {% endaddtoblock %}
+
 {% endblock %}
