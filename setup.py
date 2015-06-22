@@ -32,6 +32,7 @@ setup(
     ],
     install_requires = [
         'Django<1.8',
-        'django-hstore'
+        'django-hstore',
+        'djangorestframework',
     ],
 )
