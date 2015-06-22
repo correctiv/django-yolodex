@@ -1,19 +1,27 @@
 function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options) {
   options = options || {};
+  var defaults = {
+    respectCoords: false,
+    autoPrune: true
+  };
+  for (var k in defaults) {
+    options[k] = options[k] === undefined ? defaults[k] : options[k];
+  }
+
   var types;
   var container = d3.select('#' + containerId);
+  var $container = $('#' + containerId);
+  var svg, outer;
   var width = $('#' + containerId).width();
   var height = Math.floor(width * 0.5);
-  $('#' + containerId).height(height);
+  $container.height(height);
   var nodeMouseDown = false;
   var nodeRadius = 5;
   var nodeRadiusFunc = d3.scale.sqrt().range([10, 25]);
   var linkSizeFunc = d3.scale.linear().range([3, 8]).domain([1, 10]);
   var fontSizeFunc = d3.scale.linear().range([8, 16]);
 
-  var tooltip = container.append("div")
-      .attr("class", "tooltip")
-      .style("opacity", 1e-6);
+  var tooltip;
   var tooltipShowing = false;
 
   function mousemove() {
@@ -48,16 +56,6 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       .symmetricDiffLinkLengths(10)
       .size([width, height]);
 
-  var outer = container.append("svg")
-    .classed('svg-network', true)
-    .attr("width", width)
-    .attr("height", height)
-    .attr("pointer-events", "all")
-    .on("mousemove", mousemove);
-
-  var svg = outer.append('g')
-    .attr('class', 'network-group');
-
   var scaleFactor = 1;
   var translation = [0,0];
   var tick = function(){};
@@ -79,11 +77,6 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
     if (nodeMouseDown) { return; }
     tick();
   }
-  zoomListener(outer);
-  outer.on("dblclick.zoom", null)
-    .on('dblclick', function(){
-      zoomToFit();
-    });
 
   function graphBounds() {
       var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
@@ -181,6 +174,32 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
   }
 
   d3.json(graphUrl, function (error, graph) {
+    if (error) {
+      $container.find('.spinner').attr('class', 'spinner-error');
+      return;
+    }
+    $container.html('');
+
+    tooltip = container.append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 1e-6);
+
+    outer = container.append("svg")
+      .classed('svg-network', true)
+      .attr("width", width)
+      .attr("height", height)
+      .attr("pointer-events", "all")
+      .on("mousemove", mousemove);
+
+    svg = outer.append('g')
+      .attr('class', 'network-group');
+
+    zoomListener(outer);
+    outer.on("dblclick.zoom", null)
+      .on('dblclick', function(){
+        zoomToFit();
+      });
+
 
     types = graph.types;
     if (types) {
@@ -188,6 +207,7 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
         type = types.node[type];
         var icon = type.settings.icon;
         icon = getFontIcon(icon);
+        console.log(icon);
         $('#' + legendContainer).append(
           '<li><span class="glyphicon">' + icon + '</span>' + type.name + '</li>'
         );
@@ -199,7 +219,7 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
     var linkMapping = {};
     var idMapping = {};
     var distinctEdge = {};
-    var highestDegree = 0;
+    var highestDegree = Number.NEGATIVE_INFINITY;
     graph.nodes.forEach(function(n, i) {
       n.subject = (n.id === subjectId);
       if (n.subject) {
@@ -207,6 +227,7 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
         n.x = width / 2;
         n.y = height / 2;
       }
+      n.degree = 0;
       idMapping[n.id] = n;
     });
     graph.edges = graph.edges.filter(function(e) {
@@ -217,8 +238,6 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       if (source === undefined || target === undefined) {
         return false;
       }
-      source.degree = source.degree || 0;
-      target.degree = target.degree || 0;
       source.degree += 1;
       target.degree += 1;
       highestDegree = Math.max(highestDegree, source.degree);
@@ -274,9 +293,11 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       source.rdegree += 1;
       target.rdegree += 1;
     });
-    graph.nodes = graph.nodes.filter(function(n){
-      return !!n.rdegree;
-    });
+    if (options.autoPrune) {
+      graph.nodes = graph.nodes.filter(function(n){
+        return !!n.rdegree;
+      });
+    }
 
     graph.nodes.forEach(function(n, i){
       linkMapping[n.id] = i;
@@ -287,6 +308,10 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       e.source = linkMapping[e.source];
       e.target = linkMapping[e.target];
     });
+
+    if (highestDegree === Number.NEGATIVE_INFINITY) {
+      highestDegree = 1;
+    }
 
     nodeRadiusFunc.domain([1, highestDegree]);
     fontSizeFunc.domain([1, highestDegree]);
@@ -399,11 +424,11 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       graph.edges.forEach(function(e) {
         e.highlighted = false;
         if (e.sourceId === d.id) {
-          idMapping[e.targetId].highlighted = true;
+          e.target.highlighted = true;
           e.highlighted = true;
         }
         else if (e.targetId === d.id) {
-          idMapping[e.sourceId].highlighted = true;
+          e.source.highlighted = true;
           e.highlighted = true;
         }
       });
@@ -419,12 +444,7 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
     }
 
     tick = function(){
-      // draw directed edges with proper padding from node centers
       links.attr('d', function (d) {
-        // var sx = translation[0] + scaleFactor * d.source.x,
-        // sy = translation[1] + scaleFactor * d.source.y,
-        // tx = translation[0] + scaleFactor * d.target.x,
-        // ty = translation[1] + scaleFactor * d.target.y;
         var sx = xScale(d.source.x),
         sy = yScale(d.source.y),
         tx = xScale(d.target.x),
@@ -464,13 +484,13 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
 
     function moveToCoords() {
       var cb = coordBounds(graph.nodes.map(function(d){
-        return {x: d.data.x, y: d.data.y};
+        return {x: d.data.lng, y: d.data.lat};
       }));
       graph.nodes.forEach(function(n){
-        if (n.data.x !== undefined) {
+        if (n.data.lng !== undefined) {
           n.fixed = true;
-          n.x = (n.data.x - cb.x) / (cb.X - cb.x) * width;
-          n.y = (-n.data.y + cb.y) / (cb.Y - cb.y) * height;
+          n.x = (n.data.lng - cb.x) / (cb.X - cb.x) * width;
+          n.y = (-n.data.lat + cb.y) / (cb.Y - cb.y) * height;
         }
       });
     }
