@@ -8,10 +8,16 @@
   <h2>{{ object.name }}</h2>
   {{ rendered|markdown }}
 
+  {% if object.text %}
+    {{ object.text|markdown }}
+  {% endif %}
+
   <ul class="list-unstyled" id="network-{{ object.pk }}-types" style="position: absolute">
   </ul>
 
-  <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden"></div>
+  <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden">
+    <div class="spinner"></div>
+  </div>
 
   <ul>
   {% for edge in network.edges %}

@@ -79,7 +79,7 @@ class EntityDetailView(BaseRealmMixin, DetailView):
         context = super(EntityDetailView, self).get_context_data(**kwargs)
 
         obj = self.object
-        context['network'] = obj.get_network(level=1, include_self=False)
+        context['network'] = obj.get_network(level=1)
 
         t = Template(obj.type.template)
         rendered = t.render(Context({'self': obj, 'realm': self.realm}))

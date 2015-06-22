@@ -1,13 +1,18 @@
 {% extends "yolodex/base.html" %}
 
-{% load i18n static sekizai_tags markdown_deux_tags %}
+{% load i18n static sekizai_tags yolodex markdown_deux_tags %}
 
 {% block title %}{% blocktrans with name=realm.name %}Network for {{ name }}{% endblocktrans %}{% endblock %}
 
 {% block main %}
   <h2>{{ realm.name }}</h2>
 
-  <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden"></div>
+  <div id="network-{{ realm.pk }}" class="network-container" style="height:600px; overflow: hidden">
+    <div class="spinner"></div>
+  </div>
+  <div class="text-right">
+    <small class="text-muted">{% trans "Filtered representation" %}</small>
+  </div>
 
   <ul>
   {% for type in realm.entitytype_set.all %}
@@ -31,13 +36,15 @@
     <script>
       $(window).load(function() {
         var subjectId = undefined;
-        var legendContainer = 'network-{{ object.pk }}-types';
-        var containerId = "network-{{ object.pk }}";
-        var graphUrl = '{% url 'yolodex:entitytype-network' pk=3 %}';
-
-        EntityGraph(subjectId, legendContainer, containerId, graphUrl, {
-          respectCoords: true
-        });
+        var legendContainer = 'network-{{ realm.pk }}-types';
+        var containerId = "network-{{ realm.pk }}";
+        {% dictKeyLookup realm.settings 'focus-type' as focus_type %}
+        {% if focus_type %}
+          var graphUrl = '{% url 'yolodex:entitytype-network' pk=focus_type %}';
+          EntityGraph(subjectId, legendContainer, containerId, graphUrl, {
+            respectCoords: true,
+          });
+        {% endif %}
       });
     </script>
   {% endaddtoblock %}

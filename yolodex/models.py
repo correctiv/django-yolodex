@@ -1,9 +1,12 @@
+# -*- encoding: utf-8 -*-
 from django.db import models
 from django.db.models import Q
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.template import Template, Context
+from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 from django_hstore import hstore
 from parler.models import TranslatableModel, TranslatedFields
@@ -81,6 +84,12 @@ class Entity(models.Model):
             'slug': self.slug
         }, current_app=self.realm.slug)
 
+    def link(self):
+        return mark_safe(u'<a href="{url}">{name}</a>'.format(
+            url=self.get_absolute_url(),
+            name=escape(self.name)
+        ))
+
     def get_network(self, level=1, include_self=True):
         return make_network([self], level=level, include_self=include_self)
 
@@ -116,18 +125,19 @@ class RelationshipType(TranslatableModel):
     def reverse_verbify(self, subject):
         return self._verbify(self.reverse_verb, subject)
 
-    def render_with_subject(self, edge, subject=None):
+    def render_with_subject(self, edge, subject=None, link_object=False):
         if (subject is None or subject == edge.source) or not self.reverse_verb:
-            return u'{source} {verb} {target}'.format(
-                source=edge.source.name,
-                verb=self.verbify(edge),
-                target=edge.target.name
-            )
-        return u'{target} {reverse_verb} {source}'.format(
-            source=edge.source.name,
+            # import ipdb; ipdb.set_trace()
+            return mark_safe(u'{source} {verb} {target}'.format(
+                source=escape(edge.source.name),
+                verb=escape(self.verbify(edge)),
+                target=edge.target.link() if link_object else escape(edge.target.name)
+            ))
+        return mark_safe(u'{target} {reverse_verb} {source}'.format(
+            source=escape(edge.source.name),
             reverse_verb=self.reverse_verbify(edge),
-            target=edge.target.name
-        )
+            target=escape(edge.target.name)
+        ))
 
 
 @python_2_unicode_compatible
@@ -152,16 +162,5 @@ class Relationship(models.Model):
             self.target
         )
 
-    def render_with_subject(self, subject=None):
-        return self.type.render_with_subject(self, subject)
-
-    def render_without_subject(self, subject=None):
-        if subject is None or subject == self.source:
-            return u'{target} {reverse_verb}'.format(
-                reverse_verb=self.type.reverse_verbify(self),
-                target=self.target.name
-            )
-        return u'{source} {verb}'.format(
-            verb=self.type.verbify(self),
-            source=self.source.name
-        )
+    def render_with_subject(self, subject=None, link_object=False):
+        return self.type.render_with_subject(self, subject, link_object=link_object)
