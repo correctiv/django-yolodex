@@ -16,6 +16,8 @@ class Realm(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
 
+    settings = hstore.DictionaryField(blank=True)
+
     created_on = models.DateTimeField()
 
     def __str__(self):
@@ -59,6 +61,8 @@ class Entity(models.Model):
 
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
+
+    text = models.TextField(blank=True)
 
     data = hstore.DictionaryField(blank=True)
 
