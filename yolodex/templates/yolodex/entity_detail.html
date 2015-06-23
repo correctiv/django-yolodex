@@ -18,6 +18,9 @@
   <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden">
     <div class="spinner"></div>
   </div>
+  <div class="text-right">
+    <small class="text-muted">{% trans "Filtered representation" %}</small>
+  </div>
 
   <ul>
   {% for edge in network.edges %}
