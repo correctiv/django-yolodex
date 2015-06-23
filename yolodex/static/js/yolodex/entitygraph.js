@@ -10,11 +10,43 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
 
   var types;
   var container = d3.select('#' + containerId);
-  var $container = $('#' + containerId);
   var svg, outer;
-  var width = $('#' + containerId).width();
-  var height = Math.floor(width * 0.5);
-  $container.height(height);
+  var width, height;
+
+  function setSize() {
+    if (window.fullscreenElement) {
+      width = window.screen.width;
+      height = window.screen.height;
+      container.style('width', width + 'px');
+    } else {
+      var containerBounds = container.node().getBoundingClientRect();
+      width = containerBounds.width;
+      height = Math.floor(width * 0.5);
+    }
+    container.style('height', height + 'px');
+    outer.attr('width', width)
+      .attr('height', height);
+    xScale
+      .domain([0, width])
+      .range([0, width]);
+
+    yScale
+      .domain([0, height])
+      .range([0, height]);
+
+    zoomListener
+      .x(xScale)
+      .y(yScale);
+  }
+
+  function start() {
+    setSize();
+    d3cola.size([width, height]).start(20, 20, 20);
+    window.setTimeout(function(){
+      zoomToFit(true);
+    }, 500);
+  }
+
   var nodeMouseDown = false;
   var nodeRadius = 5;
   var nodeRadiusFunc = d3.scale.sqrt().range([10, 25]);
@@ -53,24 +85,17 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
         return nodeRadiusFunc(d.source.degree) * 2.2 + nodeRadiusFunc(d.target.degree) * 2.2 + 10;
       })
       // .avoidOverlaps(true)
-      .symmetricDiffLinkLengths(10)
-      .size([width, height]);
+      .symmetricDiffLinkLengths(10);
 
   var scaleFactor = 1;
-  var translation = [0,0];
+  var translation = [0, 0];
   var tick = function(){};
-  var xScale = d3.scale.linear()
-   .domain([0, width])
-   .range([0, width]);
 
-  var yScale = d3.scale.linear()
-    .domain([0, height])
-    .range([0, height]);
+  var xScale = d3.scale.linear();
+  var yScale = d3.scale.linear();
 
   var zoomListener = d3.behavior.zoom()
     .scaleExtent([0.2, 8])
-    .x(xScale)
-    .y(yScale)
     .on('zoom', zoomHandler);
 
   function zoomHandler(t, s) {
@@ -178,7 +203,7 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       $container.find('.spinner').attr('class', 'spinner-error');
       return;
     }
-    $container.html('');
+    container.selectAll('*').remove();
 
     tooltip = container.append("div")
         .attr("class", "tooltip")
@@ -186,13 +211,13 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
 
     outer = container.append("svg")
       .classed('svg-network', true)
-      .attr("width", width)
-      .attr("height", height)
       .attr("pointer-events", "all")
       .on("mousemove", mousemove);
 
     svg = outer.append('g')
       .attr('class', 'network-group');
+
+    setSize();
 
     zoomListener(outer);
     outer.on("dblclick.zoom", null)
@@ -317,8 +342,8 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
 
     d3cola
       .nodes(graph.nodes)
-      .links(graph.edges)
-      .start(20, 20, 20);
+      .links(graph.edges);
+
 
     var links = svg.selectAll(".link")
         .data(graph.edges)
@@ -505,16 +530,33 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       });
     }
 
+    d3cola.on("tick", tick);
+    start();
+
     if (options.respectCoords) {
       tick();
       moveToCoords();
     }
 
 
-    d3cola.on("tick", tick);
-    window.setTimeout(function(){
-      zoomToFit(true);
-    }, 500);
+    window.addEventListener('resize', function(){
+      start();
+    });
   });
 
+  return {
+    goFullScreen: function(){
+      var elem = container.node();
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        elem.mozRequestFullScreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
+      return false;
+    }
+  };
 }

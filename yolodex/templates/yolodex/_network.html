@@ -1,0 +1,14 @@
+{% load i18n %}
+
+<ul class="list-unstyled" id="network-{{ object.pk }}-types" style="position: absolute">
+</ul>
+
+<div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden">
+  <div class="spinner"></div>
+</div>
+<div class="text-right">
+  <small class="text-muted">{% trans "Filtered representation" %}</small>
+  <a class="network-fullscreen" href="#">
+    {% trans "Fullscreen" %}
+  </a>
+</div>

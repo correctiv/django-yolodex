@@ -7,13 +7,7 @@
 {% block main %}
   <h2>{{ realm.name }}</h2>
 
-  <div id="network-{{ realm.pk }}" class="network-container" style="height:600px; overflow: hidden">
-    <div class="spinner"></div>
-  </div>
-  <div class="text-right">
-    <small class="text-muted">{% trans "Filtered representation" %}</small>
-  </div>
-
+  {% include "yolodex/_network.html" with object=realm %}
   <ul>
   {% for type in realm.entitytype_set.all %}
     <li>
@@ -41,8 +35,11 @@
         {% dictKeyLookup realm.settings 'focus-type' as focus_type %}
         {% if focus_type %}
           var graphUrl = '{% url 'yolodex:entitytype-network' pk=focus_type %}';
-          EntityGraph(subjectId, legendContainer, containerId, graphUrl, {
+          var graph = EntityGraph(subjectId, legendContainer, containerId, graphUrl, {
             respectCoords: true,
+          });
+          $('.network-fullscreen').click(function(){
+            graph.goFullScreen();
           });
         {% endif %}
       });

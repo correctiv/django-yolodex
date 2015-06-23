@@ -12,15 +12,7 @@
     {{ object.text|markdown }}
   {% endif %}
 
-  <ul class="list-unstyled" id="network-{{ object.pk }}-types" style="position: absolute">
-  </ul>
-
-  <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden">
-    <div class="spinner"></div>
-  </div>
-  <div class="text-right">
-    <small class="text-muted">{% trans "Filtered representation" %}</small>
-  </div>
+  {% include "yolodex/_network.html" %}
 
   <ul>
   {% for edge in network.edges %}
@@ -43,7 +35,10 @@
       var containerId = "network-{{ object.pk }}";
       var graphUrl = '{% url 'yolodex:entity-network' pk=object.pk %}';
 
-      EntityGraph(subjectId, legendContainer, containerId, graphUrl);
+      var graph = EntityGraph(subjectId, legendContainer, containerId, graphUrl);
+      $('.network-fullscreen').click(function(){
+        graph.goFullScreen();
+      });
     });
   </script>
 {% endaddtoblock %}
