@@ -19,7 +19,7 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
   var nodeRadius = 5;
   var nodeRadiusFunc = d3.scale.sqrt().range([10, 25]);
   var linkSizeFunc = d3.scale.linear().range([3, 8]).domain([1, 10]);
-  var fontSizeFunc = d3.scale.linear().range([8, 16]);
+  var fontSizeFunc = d3.scale.linear().range([12, 16]);
 
   var tooltip;
   var tooltipShowing = false;
@@ -207,9 +207,8 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
         type = types.node[type];
         var icon = type.settings.icon;
         icon = getFontIcon(icon);
-        console.log(icon);
         $('#' + legendContainer).append(
-          '<li><span class="glyphicon">' + icon + '</span>' + type.name + '</li>'
+          '<li><span class="icon-legend">' + icon + '</span>' + type.name + '</li>'
         );
       }
     } else {
@@ -386,7 +385,7 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'central')
       .classed('node-icon', true)
-      .style("stroke", function (d) {
+      .style("fill", function (d) {
         return getNodeIconColor(d);
       })
       .on('mouseover', function(d){

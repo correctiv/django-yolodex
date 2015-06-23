@@ -44,8 +44,13 @@
 }
 .node-icon {
   pointer-events: none;
-  font-family: 'Glyphicons Halflings';
+  font-family: 'entypo';
   fill: none;
+}
+
+.icon-legend {
+  font-family: 'entypo';
+  padding: 0 5px 0;
 }
 
 .subjectlink {
