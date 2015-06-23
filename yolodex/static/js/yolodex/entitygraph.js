@@ -407,8 +407,19 @@ function EntityGraph(subjectId, legendContainer, containerId, graphUrl, options)
       var el = d3.select(this);
       el.append('text')
         .classed('node-label', true)
+        .classed('node-label-shadow', true)
         .attr('text-anchor', 'middle')
-        .attr('dy', function(d){ return nodeRadiusFunc(d.degree); })
+        .attr('dy', function(d){ return nodeRadiusFunc(d.degree) * 1.75; })
+        .attr('font-size', function(d) {
+          return (fontSizeFunc(d.degree)) + 'px';
+        })
+        .text(function(d) {
+          return d.name;
+        });
+      el.append('text')
+        .classed('node-label', true)
+        .attr('text-anchor', 'middle')
+        .attr('dy', function(d){ return nodeRadiusFunc(d.degree) * 1.75; })
         .attr('font-size', function(d) {
           return (fontSizeFunc(d.degree)) + 'px';
         })

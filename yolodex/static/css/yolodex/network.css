@@ -1,5 +1,6 @@
 .network-container {
   padding: 5px;
+  background-color: #eee;
 }
 .svg-network {
   cursor: move;
@@ -20,8 +21,15 @@
 }
 .node-label {
   font-family: sans-serif;
-
+  fill: #333;
 }
+
+.node-label-shadow {
+  stroke: #fff;
+  stroke-width: 2.5px;
+  opacity: 0.9;
+}
+
 .subject {
   stroke-width: 4px;
   stroke-dasharray: 1,1;
