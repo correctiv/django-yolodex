@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
 
 from rest_framework import viewsets, serializers
 from rest_framework.response import Response
@@ -110,7 +111,16 @@ class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         """
         obj = self.get_object()
         realm = self.get_realm(request)
-        qs = Entity.objects.filter(realm=realm, type=obj)
-        entity_filter = self.make_entity_filter(obj)
-        network = make_network(qs, level=1, entity_filter=entity_filter)
-        return Response(network.to_dict(realm=realm))
+
+        cache_key = 'yolodex:api:entitype:network:{realm}:{type}'.format(
+            realm=realm.pk,
+            type=obj.pk
+        )
+        network = cache.get(cache_key)
+        if network is None:
+            qs = Entity.objects.filter(realm=realm, type=obj)
+            entity_filter = self.make_entity_filter(obj)
+            network = make_network(qs, level=1, entity_filter=entity_filter)
+            network = network.to_dict(realm=realm)
+            cache.set(cache_key, network)
+        return Response(network)

@@ -29,10 +29,10 @@ class Realm(models.Model):
     def get_types(self):
         return {
             'node': {
-                t.slug: t.get_data() for t in self.entitytype_set.all()
+                t.slug: dict(t.get_data()) for t in self.entitytype_set.all()
             },
             'edge': {
-                t.slug: t.get_data() for t in self.relationshiptype_set.all()
+                t.slug: dict(t.get_data()) for t in self.relationshiptype_set.all()
             }
         }
 

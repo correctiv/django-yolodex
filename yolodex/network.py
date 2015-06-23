@@ -75,7 +75,7 @@ class Network(object):
             'url': node.get_absolute_url(),
             'type': node.type.slug,
             'distance': node.distance,
-            'data': node.data
+            'data': dict(node.data)
         }
 
     def edge_to_dict(self, edge):
@@ -83,5 +83,5 @@ class Network(object):
             'id': str(edge.id),
             'source': str(edge.source_id),
             'target': str(edge.target_id),
-            'data': edge.data
+            'data': dict(edge.data)
         }
