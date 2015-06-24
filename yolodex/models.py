@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
+import re
+
+
 from django.db import models
-from django.db.models import Q
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
@@ -12,6 +14,23 @@ from django_hstore import hstore
 from parler.models import TranslatableModel, TranslatedFields
 
 from .network import make_network
+
+IS_FILE_RE = re.compile(r'\.([a-z]{2,4})$')
+YOLODEX_MEDIA_PATH = 'yolodex/{}/{}'
+
+
+def get_sources(realm, sources):
+    for line in sources.splitlines():
+        if not line.strip():
+            continue
+        match = IS_FILE_RE.search(line)
+        if line.startswith(('http://', 'https://')):
+            yield ('url', line, '')
+        elif match is not None:
+            ext = match.group(1).upper()
+            yield ('file', YOLODEX_MEDIA_PATH.format(realm.pk, line), ext)
+        else:
+            yield ('text', line)
 
 
 @python_2_unicode_compatible
@@ -78,6 +97,7 @@ class Entity(models.Model):
     slug = models.SlugField(max_length=255)
 
     text = models.TextField(blank=True)
+    sources = models.TextField(blank=True)
 
     data = hstore.DictionaryField(blank=True)
 
@@ -102,6 +122,9 @@ class Entity(models.Model):
             url=self.get_absolute_url(),
             name=escape(self.name)
         ))
+
+    def get_sources(self):
+        return list(get_sources(self.realm, self.sources))
 
     def get_network(self, level=1, include_self=True):
         return make_network([self], level=level, include_self=include_self)
@@ -168,6 +191,7 @@ class Relationship(models.Model):
                                related_name='target_relationships')
     directed = models.BooleanField(default=True)
     type = models.ForeignKey(RelationshipType, null=True, on_delete=models.SET_NULL)
+    sources = models.TextField(blank=True)
 
     data = hstore.DictionaryField(blank=True)
 
@@ -183,6 +207,9 @@ class Relationship(models.Model):
             '->' if self.directed else '<->',
             self.target
         )
+
+    def get_sources(self):
+        return list(get_sources(self.realm, self.sources))
 
     def render_with_subject(self, subject=None, link_object=False):
         return self.type.render_with_subject(self, subject, link_object=link_object)
