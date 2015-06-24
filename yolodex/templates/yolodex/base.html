@@ -1,1 +1,13 @@
 {% extends CMS_TEMPLATE %}
+
+{% load i18n %}
+
+{% block main %}
+{% block simplenav %}
+  <h1>{{ realm.name }}</h1>
+  <div class="text-right">
+    <a href="{{ realm.get_absolute_url }}">{% trans "Go back to overview" %}</a>
+  </div>
+{% endblock %}
+{% block content %}{% endblock %}
+{% endblock %}

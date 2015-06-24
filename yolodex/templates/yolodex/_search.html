@@ -1,0 +1,10 @@
+{% load i18n %}
+
+<form action="{% url 'yolodex:search' %}">
+  <div class="input-group">
+    <input type="text" class="form-control" name="q" placeholder="{% blocktrans with search_placeholder=search_placeholder %}e.g. {{ search_placeholder }}{% endblocktrans %}"/>
+    <span class="input-group-btn">
+      <button class="btn btn-default" type="submit">{% trans "Search" %}</button>
+    </span>
+  </div>
+</form>

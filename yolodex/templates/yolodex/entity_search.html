@@ -1,0 +1,26 @@
+{% extends "yolodex/base.html" %}
+
+{% load i18n static sekizai_tags markdown_deux_tags yolodex %}
+
+{% block title %}{% blocktrans with query=query %}Search "{{ query }}"{% endblocktrans %} - {{ realm.name }}{% endblock %}
+
+{% block content %}
+  <h2>{% blocktrans with query=query %}Search "{{ query }}"{% endblocktrans %}</h2>
+
+  {% dictKeyLookup realm.settings 'search-placeholder' as search_placeholder %}
+  {% include "yolodex/_search.html" with search_placeholder=search_placeholder %}
+
+  <hr/>
+
+  <ul>
+    {% for object in object_list %}
+      <li>
+        <a href="{{ object.get_absolute_url }}">
+          {{ object.name }}
+          </a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% include "pagination.html" with pageobj=pageobj getvars=getvars %}
+{% endblock %}

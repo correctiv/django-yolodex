@@ -1,15 +1,10 @@
-import json
-
 from django.template import Template, Context
 from django.shortcuts import get_object_or_404, Http404, redirect
 from django.views.generic import DetailView, ListView, TemplateView
-from django.core.urlresolvers import resolve
 
 from .models import Realm, Entity, EntityType
-
-
-def get_current_app(request):
-    return resolve(request.path).namespace
+from .api_views import search
+from .utils import get_current_app
 
 
 class BaseRealmMixin(object):
@@ -40,6 +35,25 @@ class BaseRealmMixin(object):
 
 class RealmView(BaseRealmMixin, TemplateView):
     template_name = 'yolodex/overview.html'
+
+
+class EntitySearchView(BaseRealmMixin, ListView):
+    model = Entity
+    paginate_by = 50
+    template_name = 'yolodex/entity_search.html'
+    allow_empty = True
+
+    def get_queryset(self):
+        qs = super(EntitySearchView, self).get_queryset()
+        self.query = self.request.GET.get('q', '')
+        qs = search(qs, self.query)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super(EntitySearchView, self).get_context_data(**kwargs)
+        ctx['query'] = self.query
+        ctx['getvars'] = '&q={}'.format(self.query)
+        return ctx
 
 
 class EntityListView(BaseRealmMixin, ListView):
@@ -80,6 +94,7 @@ class EntityDetailView(BaseRealmMixin, DetailView):
 
         obj = self.object
         context['network'] = obj.get_network(level=1)
+        context['realm'] = self.get_realm()
 
         t = Template(obj.type.template)
         rendered = t.render(Context({'self': obj, 'realm': self.realm}))

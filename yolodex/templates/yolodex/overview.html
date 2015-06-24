@@ -4,19 +4,23 @@
 
 {% block title %}{% blocktrans with name=realm.name %}Network for {{ name }}{% endblocktrans %}{% endblock %}
 
-{% block main %}
-  <h2>{{ realm.name }}</h2>
+{% block simplenav %}{% endblock %}
+
+{% block content %}
+  <h1>{{ realm.name }}</h1>
+
+  {% dictKeyLookup realm.settings 'search-placeholder' as search_placeholder %}
+  {% include "yolodex/_search.html" with search_placeholder=search_placeholder %}
+
+  <p>{% trans "Search for the following:" %}
+  {% for type in realm.entitytype_set.all %}
+      <a href="{% url 'yolodex:entity_list' type=type.slug %}">
+        {{ type.name_plural }}
+      </a>{% if not forloop.last %}, {% endif %}
+  {% endfor %}
+</p>
 
   {% include "yolodex/_network.html" with object=realm %}
-  <ul>
-  {% for type in realm.entitytype_set.all %}
-    <li>
-      <a href="{% url 'yolodex:entity_list' type=type.slug %}">
-        {{ type.name }}
-      </a>
-    </li>
-  {% endfor %}
-  </ul>
 
   {% addtoblock "css" %}
     <link rel="stylesheet" href="{% static "css/yolodex/network.css" %}" media="screen" charset="utf-8">
@@ -24,6 +28,7 @@
 
   {% addtoblock "js" %}
     <script src="{% static "vendor/d3/d3.min.js" %}"></script>
+    <script src="{% static "vendor/d3-jetpack/d3-jetpack.js" %}"></script>
     <script src="{% static "vendor/webcola/WebCola/cola.min.js" %}"></script>
     <script src="{% static "js/yolodex/entitygraph.js" %}"></script>
 
@@ -35,11 +40,10 @@
         {% dictKeyLookup realm.settings 'focus-type' as focus_type %}
         {% if focus_type %}
           var graphUrl = '{% url 'yolodex:entitytype-network' pk=focus_type %}';
-          var graph = EntityGraph(subjectId, legendContainer, containerId, graphUrl, {
+          var graph = EntityGraph(subjectId, containerId, graphUrl, {
             respectCoords: true,
-          });
-          $('.network-fullscreen').click(function(){
-            graph.goFullScreen();
+            legendContainerId: legendContainer,
+            fullscreenSelector: '.network-fullscreen'
           });
         {% endif %}
       });

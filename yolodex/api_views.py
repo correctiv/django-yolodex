@@ -3,12 +3,21 @@ from django.core.cache import cache
 
 from rest_framework import viewsets, serializers
 from rest_framework.response import Response
-from rest_framework.routers import Route, DynamicDetailRoute, SimpleRouter
-from rest_framework.decorators import detail_route
+from rest_framework.routers import (Route, DynamicDetailRoute, DynamicListRoute,
+                                    SimpleRouter)
+from rest_framework.decorators import detail_route, list_route
 
 from .models import Realm, Entity, EntityType
 from .network import make_network, undirected_comp
-from .views import get_current_app
+from .utils import get_current_app
+
+
+def search(qs, query, filters=None):
+    if query and len(query) > 2:
+        qs = qs.filter(name__contains=query)
+    else:
+        qs = qs.none()
+    return qs
 
 
 class CustomReadOnlyRouter(SimpleRouter):
@@ -20,6 +29,11 @@ class CustomReadOnlyRouter(SimpleRouter):
             url=r'^{prefix}/$',
             mapping={'get': 'list'},
             name='{basename}-list',
+            initkwargs={}
+        ),
+        DynamicListRoute(
+            url=r'^{prefix}/{methodnamehyphen}/$',
+            name='{basename}-{methodnamehyphen}',
             initkwargs={}
         ),
         Route(
@@ -72,6 +86,15 @@ class EntityViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         realm = self.get_realm(self.request)
         return Entity.objects.filter(realm=realm)
 
+    @list_route()
+    def search(self, request, **kwargs):
+        query = request.query_params.get('q', '')
+        qs = search(self.get_queryset(), query)
+        return Response({
+            'query': query,
+            'results': EntitySerializer(qs, many=True).data
+        })
+
     @detail_route()
     def network(self, request, **kwargs):
         """
@@ -122,5 +145,5 @@ class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
             entity_filter = self.make_entity_filter(obj)
             network = make_network(qs, level=1, entity_filter=entity_filter)
             network = network.to_dict(realm=realm)
-            cache.set(cache_key, network)
+            cache.set(cache_key, network, None)
         return Response(network)
