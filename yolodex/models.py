@@ -130,15 +130,16 @@ class RelationshipType(TranslatableModel):
         return self._verbify(self.reverse_verb, subject)
 
     def render_with_subject(self, edge, subject=None, link_object=False):
-        if (subject is None or subject == edge.source) or not self.reverse_verb:
-            # import ipdb; ipdb.set_trace()
+        if subject is None or subject == edge.source or not self.reverse_verb:
             return mark_safe(u'{source} {verb} {target}'.format(
-                source=escape(edge.source.name),
+                source=edge.source.link() if (subject != edge.source and
+                       link_object) else escape(edge.source.name),
                 verb=escape(self.verbify(edge)),
-                target=edge.target.link() if link_object else escape(edge.target.name)
+                target=edge.target.link() if (subject != edge.target and
+                       link_object) else escape(edge.target.name)
             ))
         return mark_safe(u'{target} {reverse_verb} {source}'.format(
-            source=escape(edge.source.name),
+            source=edge.source.link() if link_object else escape(edge.source.name),
             reverse_verb=self.reverse_verbify(edge),
             target=escape(edge.target.name)
         ))
