@@ -44,6 +44,7 @@ class EntityType(TranslatableModel):
     realms = models.ManyToManyField(Realm)
     translations = TranslatedFields(
         name=models.CharField(max_length=255),
+        name_plural=models.CharField(max_length=255, blank=True),
         slug=models.SlugField(max_length=255),
         template=models.TextField(blank=True)
     )
