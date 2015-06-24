@@ -4,7 +4,7 @@
 
 {% block title %}{{ object.name }} - {{ realm.name }}{% endblock %}
 
-{% block main %}
+{% block content %}
   <h2>{{ object.name }}</h2>
   {{ rendered|markdown }}
 
@@ -25,6 +25,7 @@
 
 {% addtoblock "js" %}
   <script src="{% static "vendor/d3/d3.min.js" %}"></script>
+  <script src="{% static "vendor/d3-jetpack/d3-jetpack.js" %}"></script>
   <script src="{% static "vendor/webcola/WebCola/cola.min.js" %}"></script>
   <script src="{% static "js/yolodex/entitygraph.js" %}"></script>
 
@@ -35,9 +36,9 @@
       var containerId = "network-{{ object.pk }}";
       var graphUrl = '{% url 'yolodex:entity-network' pk=object.pk %}';
 
-      var graph = EntityGraph(subjectId, legendContainer, containerId, graphUrl);
-      $('.network-fullscreen').click(function(){
-        graph.goFullScreen();
+      var graph = EntityGraph(subjectId, containerId, graphUrl, {
+        legendContainerId: legendContainer,
+        fullscreenSelector: '.network-fullscreen'
       });
     });
   </script>

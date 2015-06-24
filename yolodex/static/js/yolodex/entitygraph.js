@@ -76,13 +76,16 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   var container = d3.select('#' + containerId);
   var svg, outer;
   var width, height;
+  var isFullScreen = false;
 
   function setSize() {
-    if (window.fullscreenElement) {
+    if (isFullScreen) {
       width = window.screen.width;
       height = window.screen.height;
       container.style('width', width + 'px');
     } else {
+      container.style('width', null);
+      container.style('height', null);
       var containerBounds = container.node().getBoundingClientRect();
       width = containerBounds.width;
       height = Math.floor(width * 0.5);
@@ -276,7 +279,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     outer = container.append("svg")
       .classed('svg-network', true)
       .attr("pointer-events", "all")
-      .on("mousemove", mousemove);
+      .on("mousemove touchmove", mousemove);
 
     svg = outer.append('g')
       .attr('class', 'network-group');
@@ -291,12 +294,12 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
 
 
     types = graph.types;
-    if (types) {
+    if (types && options.legendContainerId) {
       for (var type in types.node) {
         type = types.node[type];
         var icon = type.settings.icon;
         icon = getFontIcon(icon);
-        $('#' + legendContainer).append(
+        $('#' + options.legendContainerId).append(
           '<li><span class="icon-legend">' + icon + '</span>' + type.name + '</li>'
         );
       }
@@ -419,10 +422,10 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         .attr('stroke-width', function(d){
           return linkSizeFunc(d.weight);
         })
-        .on('mouseover', function(d){
+        .on('mouseover touchstart', function(d){
           showTooltip(d.data.label + ' -> ' + d.target.name);
         })
-        .on('mouseout', function(d){
+        .on('mouseout touchend', function(d){
           hideTooltip(d);
         });
 
@@ -445,11 +448,11 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
           }
           return getNodeStrokeColor(d);
         })
-        .on('mouseover', function(d){
+        .on('mouseover touchstart', function(d){
           showTooltip(d.name);
           highlightConnections(d);
         })
-        .on('mouseout', function(d){
+        .on('mouseout touchend', function(d){
           hideTooltip(d);
           unHighlightConnections(d);
         })
@@ -608,19 +611,47 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     });
   });
 
-  return {
-    goFullScreen: function(){
-      var elem = container.node();
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
-      } else if (elem.mozRequestFullScreen) {
-        elem.mozRequestFullScreen();
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      }
-      return false;
+  var goFullScreen = function(){
+    var elem = container.node();
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+      elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
     }
+    return false;
   };
+
+  document.addEventListener("fullscreenchange", function () {
+      isFullScreen = document.fullscreen;
+      setSize();
+  }, false);
+
+  document.addEventListener("mozfullscreenchange", function () {
+      isFullScreen = document.mozFullScreen;
+      setSize();
+  }, false);
+
+  document.addEventListener("webkitfullscreenchange", function () {
+      isFullScreen = document.webkitIsFullScreen;
+      setSize();
+  }, false);
+
+  document.addEventListener("msfullscreenchange", function () {
+      isFullScreen = document.msFullscreenElement;
+      setSize();
+  }, false);
+
+  if (options.fullscreenSelector) {
+    if (document.fullscreenEnabled || document.webkitFullscreenEnabled || document.mozFullScreenEnabled) {
+      d3.selectAll(options.fullscreenSelector).on('click', function(){
+        goFullScreen();
+      });
+    } else {
+      d3.selectAll(options.fullscreenSelector).remove();
+    }
+  }
 }
