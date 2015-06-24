@@ -23,6 +23,10 @@ class Realm(models.Model):
 
     created_on = models.DateTimeField()
 
+    class Meta:
+        verbose_name = _('realm')
+        verbose_name_plural = _('realms')
+
     def __str__(self):
         return self.name
 
@@ -49,6 +53,10 @@ class EntityType(TranslatableModel):
         template=models.TextField(blank=True)
     )
     settings = hstore.DictionaryField(blank=True)
+
+    class Meta:
+        verbose_name = _('entity type')
+        verbose_name_plural = _('entity types')
 
     def __str__(self):
         return self.safe_translation_getter('name', language_code='en')
@@ -77,7 +85,8 @@ class Entity(models.Model):
 
     class Meta:
         unique_together = ('realm', 'slug')
-        verbose_name_plural = _('Entities')
+        verbose_name = _('entity')
+        verbose_name_plural = _('entities')
 
     def __str__(self):
         return u'{name} ({type})'.format(name=self.name, type=self.type)
@@ -108,6 +117,10 @@ class RelationshipType(TranslatableModel):
     )
 
     settings = hstore.DictionaryField(blank=True)
+
+    class Meta:
+        verbose_name = _('relationship type')
+        verbose_name_plural = _('relationship types')
 
     def __str__(self):
         return self.safe_translation_getter('name', language_code='en')
@@ -159,6 +172,10 @@ class Relationship(models.Model):
     data = hstore.DictionaryField(blank=True)
 
     objects = hstore.HStoreManager()
+
+    class Meta:
+        verbose_name = _('relationship')
+        verbose_name_plural = _('relationships')
 
     def __str__(self):
         return u'%s %s %s' % (
