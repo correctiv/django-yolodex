@@ -9,6 +9,7 @@ from .utils import get_current_app
 
 class BaseRealmMixin(object):
     _current_app = None
+    extra_context = {}
 
     @property
     def current_app(self):
@@ -30,6 +31,7 @@ class BaseRealmMixin(object):
     def get_context_data(self, **kwargs):
         context = super(BaseRealmMixin, self).get_context_data(**kwargs)
         context['realm'] = self.get_realm()
+        context.update(self.extra_context)
         return context
 
 
@@ -101,3 +103,9 @@ class EntityDetailView(BaseRealmMixin, DetailView):
         context['rendered'] = rendered
 
         return context
+
+
+class EntityDetailNetworkEmbedView(EntityDetailView):
+    model = Entity
+    template_name = 'yolodex/entity_detail_embed.html'
+    extra_context = {'embed': True}

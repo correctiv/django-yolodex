@@ -1,11 +1,11 @@
 from django.conf.urls import patterns, url
-from django.utils.translation import ugettext as _
 
 from .views import (
     RealmView,
     EntitySearchView,
     EntityListView,
     EntityDetailView,
+    EntityDetailNetworkEmbedView,
 )
 from .api_views import (
     YolodexRouter,
@@ -26,6 +26,9 @@ entity_urls = [
     url(r'^(?P<type>[\w-]+)/(?P<slug>[\w-]+)/$',
         EntityDetailView.as_view(),
         name='entity_detail'),
+    url(r'^(?P<type>[\w-]+)/(?P<slug>[\w-]+)/embed/$',
+        EntityDetailNetworkEmbedView.as_view(),
+        name='entity_detail_embed'),
 ]
 
 urlpatterns = router.urls

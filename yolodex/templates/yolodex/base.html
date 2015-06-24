@@ -4,9 +4,15 @@
 
 {% block main %}
 {% block simplenav %}
-  <h1>{{ realm.name }}</h1>
+  <h1>
+    <a href="{{ realm.get_absolute_url }}">
+      {{ realm.name }}
+    </a>
+  </h1>
   <div class="text-right">
-    <a href="{{ realm.get_absolute_url }}">{% trans "Go back to overview" %}</a>
+    <a href="{{ realm.get_absolute_url }}">
+      {% trans "Go back to overview" %}
+    </a>
   </div>
 {% endblock %}
 {% block content %}{% endblock %}

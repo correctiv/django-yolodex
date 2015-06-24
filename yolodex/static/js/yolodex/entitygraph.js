@@ -88,7 +88,12 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       container.style('height', null);
       var containerBounds = container.node().getBoundingClientRect();
       width = containerBounds.width;
-      height = Math.floor(width * 0.5);
+      if (options.embed) {
+        height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        height = height - 30;
+      } else {
+        height = Math.floor(width * 0.5);
+      }
     }
     container.style('height', height + 'px');
     outer.attr('width', width)

@@ -14,9 +14,7 @@
 
   <p>{% trans "Search for the following:" %}
   {% for type in realm.entitytype_set.all %}
-      <a href="{% url 'yolodex:entity_list' type=type.slug %}">
-        {{ type.name_plural }}
-      </a>{% if not forloop.last %}, {% endif %}
+      <a href="{% url 'yolodex:entity_list' type=type.slug %}">{{ type.name_plural }}</a>{% if not forloop.last %}, {% endif %}
   {% endfor %}
 </p>
 

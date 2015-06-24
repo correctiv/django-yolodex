@@ -1,28 +1,17 @@
-{% extends "yolodex/base.html" %}
+{% extends "embed_base.html" %}
 
 {% load i18n static sekizai_tags markdown_deux_tags yolodex %}
 
 {% block title %}{{ object.name }} - {{ realm.name }}{% endblock %}
 
-{% block content %}
-  <h2>{{ object.name }}</h2>
-  {{ rendered|markdown }}
+{% block body-sheath %}
+  {% include "yolodex/_network.html" with embed=True %}
 
-  {% if object.text %}
-    {{ object.text|markdown }}
-  {% endif %}
+  <div class="pull-left">
+    <a href="{{ SITE_URL }}{{ realm.get_absolute_url }}">{{ realm.name }}</a> - 
+    <a href="{{ SITE_URL }}">{{ SITE_NAME }}</a>
+  </div>
 
-  {% include "yolodex/_network.html" %}
-
-  <h3>
-    {% blocktrans with name=object.name count count=network.edges|length %}{{ name }} has one connection{% plural %}{{ name }} has {{ count }} connections{% endblocktrans %}
-  </h3>
-
-  <ul>
-  {% for edge in network.edges %}
-    <li>{% verbify edge object %}</li>
-  {% endfor %}
-  </ul>
 {% addtoblock "css" %}
   <link rel="stylesheet" href="{% static "css/yolodex/network.css" %}" media="screen" charset="utf-8">
 {% endaddtoblock %}
@@ -42,7 +31,8 @@
 
       var graph = EntityGraph(subjectId, containerId, graphUrl, {
         legendContainerId: legendContainer,
-        fullscreenSelector: '.network-fullscreen'
+        fullscreenSelector: '.network-fullscreen',
+        embed: true
       });
     });
   </script>
