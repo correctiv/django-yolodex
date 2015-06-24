@@ -4,8 +4,8 @@
 
 {% block title %}{{ type.name }} - {{ realm.name }}{% endblock %}
 
-{% block main %}
-  <h2>{{ type.name }}</h2>
+{% block content %}
+  <h2>{{ type.name_plural }}</h2>
 
   <ul>
     {% for object in object_list %}
