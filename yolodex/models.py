@@ -26,6 +26,9 @@ class Realm(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return reverse('yolodex:overview', current_app=self.slug)
+
     def get_types(self):
         return {
             'node': {
