@@ -1,7 +1,4 @@
 # -*- encoding: utf-8 -*-
-import re
-
-
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
@@ -14,23 +11,7 @@ from django_hstore import hstore
 from parler.models import TranslatableModel, TranslatedFields
 
 from .network import make_network
-
-IS_FILE_RE = re.compile(r'\.([a-z]{2,4})$')
-YOLODEX_MEDIA_PATH = 'yolodex/{}/{}'
-
-
-def get_sources(realm, sources):
-    for line in sources.splitlines():
-        if not line.strip():
-            continue
-        match = IS_FILE_RE.search(line)
-        if line.startswith(('http://', 'https://')):
-            yield ('url', line, '')
-        elif match is not None:
-            ext = match.group(1).upper()
-            yield ('file', YOLODEX_MEDIA_PATH.format(realm.pk, line), ext)
-        else:
-            yield ('text', line)
+from .utils import get_sources
 
 
 @python_2_unicode_compatible

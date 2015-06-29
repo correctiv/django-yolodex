@@ -21,9 +21,12 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        realm_slug, nodes_filename, edges_filename = args
+        realm_slug, nodes_filename, edges_filename = args[:3]
+        media_dir = None
+        if len(args) > 3:
+            media_dir = args[3]
         realm = Realm.objects.get(slug=realm_slug)
         nodes = unicodecsv.DictReader(open(nodes_filename))
         edges = unicodecsv.DictReader(open(edges_filename))
 
-        import_graph(realm, nodes, edges, clear=options['clear'])
+        import_graph(realm, nodes, edges, media_dir=media_dir, clear=options['clear'])

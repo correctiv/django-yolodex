@@ -1,11 +1,58 @@
+import shutil
+import re
+import os
+import errno
+
+from django.conf import settings
 from django.core.urlresolvers import resolve
 from django.template.defaultfilters import slugify
 
-from .models import Entity, EntityType, Relationship, RelationshipType
+
+IS_FILE_RE = re.compile(r'\.([a-z]{2,4})$')
+YOLODEX_MEDIA_PATH = u'yolodex/sources/{}/{}'
 
 
 def get_current_app(request):
     return resolve(request.path).namespace
+
+
+def get_media_path(realm, path):
+    return YOLODEX_MEDIA_PATH.format(realm.pk, path)
+
+
+def get_absolute_media_path(realm, path):
+    return os.path.join(settings.MEDIA_ROOT, get_media_path(realm, path))
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def get_sources(realm, sources):
+    for kind, source, extra in get_raw_sources(realm, sources):
+        if kind == 'file':
+            source = get_media_path(realm, source)
+        yield kind, source, extra
+
+
+def get_raw_sources(realm, sources):
+    for line in sources.splitlines():
+        if not line.strip():
+            continue
+        match = IS_FILE_RE.search(line)
+        if line.startswith(('http://', 'https://')):
+            yield ('url', line, '')
+        elif match is not None:
+            ext = match.group(1).upper()
+            yield ('file', line, ext)
+        else:
+            yield ('text', line, '')
 
 
 def get_from_cache_or_create(type_slug, klass, cache, realm):
@@ -26,7 +73,10 @@ def get_from_cache_or_create(type_slug, klass, cache, realm):
     return typ
 
 
-def import_graph(realm, nodes, edges, clear=False):
+def import_graph(realm, nodes, edges, media_dir=None, clear=False):
+
+    from .models import Entity, Relationship
+
     entity_typ_cache = {}
     entity_cache = {}
 
@@ -37,14 +87,32 @@ def import_graph(realm, nodes, edges, clear=False):
     for node in nodes:
         entity = create_entity(realm, node, entity_cache, entity_typ_cache)
         print "Entity %s created" % entity
+        if entity is not None and media_dir is not None:
+            raw_sources = get_raw_sources(realm, entity.sources)
+            import_sources(realm, [s[1] for s in raw_sources if s[0] == 'file'], media_dir)
 
     rel_typ_cache = {}
     for edge in edges:
         rel = create_relationship(realm, edge, entity_cache, rel_typ_cache)
         print "Relationship %s created" % rel
+        if rel is not None and media_dir is not None:
+            raw_sources = get_raw_sources(realm, rel.sources)
+            import_sources(realm, [s[1] for s in raw_sources if s[0] == 'file'], media_dir)
+
+
+def import_sources(realm, sources, media_dir):
+    for source in sources:
+        src = os.path.join(media_dir, source)
+        target = get_absolute_media_path(realm, source)
+        target_dir = os.path.dirname(target)
+        mkdir_p(target_dir)
+        if not os.path.exists(target):
+            shutil.copyfile(src, target)
 
 
 def create_entity(realm, node, entity_cache, entity_typ_cache):
+    from .models import Entity, EntityType
+
     name = node.pop('label')
     slug = node.pop('id', slugify(name))
     if not slug:
@@ -72,6 +140,8 @@ def create_entity(realm, node, entity_cache, entity_typ_cache):
 
 
 def create_relationship(realm, edge, entity_cache, rel_typ_cache):
+    from .models import Relationship, RelationshipType
+
     source_slug = edge.pop('source')
     if not source_slug:
         return
@@ -87,13 +157,15 @@ def create_relationship(realm, edge, entity_cache, rel_typ_cache):
         reltype = get_from_cache_or_create(reltype_slug, RelationshipType, rel_typ_cache, realm)
     edge_type = edge.pop('type', 'directed')
     data = {k: v for k, v in edge.items() if v}
-    rel = Relationship.objects.create(
+    rel, created = Relationship.objects.get_or_create(
         realm=realm,
         source=source,
         target=target,
         type=reltype,
-        sources=sources,
-        directed=edge_type == 'directed',
-        data=data
+        defaults=dict(
+            sources=sources,
+            directed=edge_type == 'directed',
+            data=data
+        )
     )
     return rel
