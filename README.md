@@ -10,4 +10,4 @@ Features include:
 - Force network visualisation and navigation
 - Ready as a Django CMS app
 
-Inspired by [django-rolodex](https://github.com/DallasMorningNews/django-rolodex).
+Inspired by [django-rolodex](https://github.com/DallasMorningNews/django-rolodex) and [kompromatron/machtvz](https://github.com/pudo/kompromatron).
