@@ -103,7 +103,16 @@ class EntityViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         """
         obj = self.get_object()
         realm = self.get_realm(request)
-        return Response(obj.get_network(level=2).to_dict(realm=realm))
+
+        cache_key = 'yolodex:api:entity:network:{realm}:{entity}'.format(
+            realm=realm.pk,
+            entity=obj.pk
+        )
+        network = cache.get(cache_key)
+        if network is None:
+            network = obj.get_network(level=2).to_dict(realm=realm)
+            cache.set(cache_key, network, None)
+        return Response(network)
 
 
 class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
@@ -135,7 +144,7 @@ class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         obj = self.get_object()
         realm = self.get_realm(request)
 
-        cache_key = 'yolodex:api:entitype:network:{realm}:{type}'.format(
+        cache_key = 'yolodex:api:entitytype:network:{realm}:{type}'.format(
             realm=realm.pk,
             type=obj.pk
         )
