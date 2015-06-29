@@ -10,6 +10,8 @@ class RealmAdmin(admin.ModelAdmin):
 
 
 class EntityTypeAdmin(TranslatableAdmin):
+    list_display = ('name', 'name_plural')
+
     def get_prepopulated_fields(self, request, obj=None):
         return {
             'slug': ('name',)
@@ -17,6 +19,8 @@ class EntityTypeAdmin(TranslatableAdmin):
 
 
 class RelationshipTypeAdmin(TranslatableAdmin):
+    list_display = ('name', 'verb', 'reverse_verb')
+
     def get_prepopulated_fields(self, request, obj=None):
         return {
             'slug': ('name',)
@@ -24,11 +28,15 @@ class RelationshipTypeAdmin(TranslatableAdmin):
 
 
 class RelationshipAdmin(admin.ModelAdmin):
+    list_filter = ('realm', 'type',)
+    search_fields = ('source__name', 'target__name',)
+    list_display = ('__str__', 'source', 'target', 'type')
     raw_id_fields = ('source', 'target')
 
 
 class EntityAdmin(admin.ModelAdmin):
-    list_filter = ('type',)
+    list_filter = ('realm', 'type',)
+    search_fields = ('name',)
 
 
 admin.site.register(Realm, RealmAdmin)
