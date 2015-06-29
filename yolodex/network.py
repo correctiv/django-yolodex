@@ -10,6 +10,9 @@ def undirected_comp(func, r):
 
 def make_network(initial_qs, level=2, include_self=True,
                  rel_filter_op='or_', entity_filter=None):
+    """
+    FIXME: make this more efficient/less horrible
+    """
     from .models import Relationship
 
     assert level < 4
