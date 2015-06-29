@@ -8,7 +8,7 @@
       <p>
       {% for type,value,extra in sources %}
           {% if type == "url" %}
-            {{ value|urlize }}
+            <a href="{{ value }}">{{ extra }}</a>
           {% endif %}
           {% if type == "file" %}
             <a href="{{ MEDIA_URL }}{{ value }}">{{ extra }}</a>

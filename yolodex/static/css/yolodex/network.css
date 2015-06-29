@@ -89,5 +89,9 @@
 }
 
 .sources {
-  background-color: #bbb;
+  background-color: #eee;
+}
+
+.sources p {
+  padding: 5px;  
 }

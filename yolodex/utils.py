@@ -3,6 +3,11 @@ import re
 import os
 import errno
 
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 from django.conf import settings
 from django.core.urlresolvers import resolve
 from django.template.defaultfilters import slugify
@@ -34,6 +39,11 @@ def mkdir_p(path):
             raise
 
 
+def get_domain(url):
+    o = urlparse(url)
+    return o.netloc
+
+
 def get_sources(realm, sources):
     for kind, source, extra in get_raw_sources(realm, sources):
         if kind == 'file':
@@ -47,7 +57,10 @@ def get_raw_sources(realm, sources):
             continue
         match = IS_FILE_RE.search(line)
         if line.startswith(('http://', 'https://')):
-            yield ('url', line, '')
+            extra = get_domain(line)
+            if match is not None:
+                extra = u'%s (%s)' % (extra, match.group(1).upper())
+            yield ('url', line, extra)
         elif match is not None:
             ext = match.group(1).upper()
             yield ('file', line, ext)
