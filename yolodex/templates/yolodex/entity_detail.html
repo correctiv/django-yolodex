@@ -20,9 +20,15 @@
 
   <ul>
   {% for edge in network.edges %}
-    <li>{% verbify edge object %}</li>
+    <li data-id="{{ edge.pk }}">
+      {% verbify edge object %}
+      {% include "yolodex/_sources.html" with obj=edge %}
+    </li>
   {% endfor %}
   </ul>
+
+  {% include "yolodex/_sources.html" with obj=object %}
+
 {% addtoblock "css" %}
   <link rel="stylesheet" href="{% static "css/yolodex/network.css" %}" media="screen" charset="utf-8">
 {% endaddtoblock %}
@@ -34,6 +40,10 @@
   <script src="{% static "js/yolodex/entitygraph.js" %}"></script>
 
   <script>
+    $('.source-link').click(function(e){
+      e.preventDefault();
+      $($(this).attr('href')).toggle();
+    })
     $(window).load(function() {
       var subjectId = "{{ object.id }}";
       var legendContainer = 'network-{{ object.pk }}-types';

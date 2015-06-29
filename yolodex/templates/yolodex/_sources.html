@@ -1,0 +1,24 @@
+{% load i18n %}
+{% with sources=obj.get_sources %}
+  {% if sources %}
+    <small>
+      <a href="#source-{{ obj.pk }}" class="source-link">{% trans "Sources" %}</a>
+    </small>
+    <div class="sources" id="source-{{ obj.pk }}" style="display: none">
+      <p>
+      {% for type,value,extra in sources %}
+          {% if type == "url" %}
+            {{ value|urlize }}
+          {% endif %}
+          {% if type == "file" %}
+            <a href="{{ MEDIA_URL }}{{ value }}">{{ extra }}</a>
+          {% endif %}
+          {% if type == "text" %}
+            {{ value }}
+          {% endif %}
+        {% if not forloop.last %}<br/>{% endif %}
+      {% endfor %}
+      </p>
+    </div>
+  {% endif %}
+{% endwith %}

@@ -83,3 +83,11 @@
   border: solid 1px #aaa;
   pointer-events: none;
 }
+
+.source-link, .source-link:hover {
+  color: #bbb;
+}
+
+.sources {
+  background-color: #bbb;
+}
