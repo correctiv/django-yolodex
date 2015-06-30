@@ -115,8 +115,8 @@ def import_graph(realm, nodes, edges, media_dir=None, clear=False):
 
 def import_sources(realm, sources, media_dir):
     for source in sources:
-        src = os.path.join(media_dir, source)
-        target = get_absolute_media_path(realm, source)
+        src = os.path.join(media_dir, source).encode('utf-8')
+        target = get_absolute_media_path(realm, source).encode('utf-8')
         target_dir = os.path.dirname(target)
         mkdir_p(target_dir)
         if not os.path.exists(target):
