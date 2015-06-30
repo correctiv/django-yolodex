@@ -4,8 +4,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.template import Template, Context
-from django.utils.safestring import mark_safe
-from django.utils.html import escape
+from django.utils.html import format_html
 
 from django_hstore import hstore
 from parler.models import TranslatableModel, TranslatedFields
@@ -99,9 +98,9 @@ class Entity(models.Model):
         }, current_app=self.realm.slug)
 
     def link(self):
-        return mark_safe(u'<a href="{url}">{name}</a>'.format(
+        return format_html(u'<a href="{url}">{name}</a>'.format(
             url=self.get_absolute_url(),
-            name=escape(self.name)
+            name=self.name
         ))
 
     def get_sources(self):
@@ -148,17 +147,17 @@ class RelationshipType(TranslatableModel):
 
     def render_with_subject(self, edge, subject=None, link_object=False):
         if subject is None or subject == edge.source or not self.reverse_verb:
-            return mark_safe(u'{source} {verb} {target}'.format(
+            return format_html(u'{source} {verb} {target}'.format(
                 source=edge.source.link() if (subject != edge.source and
-                       link_object) else escape(edge.source.name),
-                verb=escape(self.verbify(edge)),
+                       link_object) else edge.source.name,
+                verb=self.verbify(edge),
                 target=edge.target.link() if (subject != edge.target and
-                       link_object) else escape(edge.target.name)
+                       link_object) else edge.target.name
             ))
-        return mark_safe(u'{target} {reverse_verb} {source}'.format(
-            source=edge.source.link() if link_object else escape(edge.source.name),
+        return format_html(u'{target} {reverse_verb} {source}'.format(
+            source=edge.source.link() if link_object else edge.source.name,
             reverse_verb=self.reverse_verbify(edge),
-            target=escape(edge.target.name)
+            target=edge.target.name
         ))
 
 
