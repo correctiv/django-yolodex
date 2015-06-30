@@ -272,7 +272,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
 
   d3.json(graphUrl, function (error, graph) {
     if (error) {
-      $container.find('.spinner').attr('class', 'spinner-error');
+      container.selectAll('.spinner').attr('class', 'spinner-error');
       return;
     }
     container.selectAll('*').remove();
