@@ -175,21 +175,22 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     tick();
   }
 
-  function graphBounds() {
-      var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
-      svg.selectAll(".node").each(function(v) {
-          var r = nodeRadiusFunc(v.degree);
-          x = Math.min(x, v.x - r);
-          X = Math.max(X, v.x + r);
-          y = Math.min(y, v.y - r);
-          Y = Math.max(Y, v.y + r);
-      });
-      return { x: x, X: X, y: y, Y: Y };
+  function graphBounds(padding) {
+    padding = padding || 0;
+    var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
+    svg.selectAll(".node").each(function(v) {
+        var r = nodeRadiusFunc(v.degree);
+        x = Math.min(x, v.x - r);
+        X = Math.max(X, v.x + r);
+        y = Math.min(y, v.y - r);
+        Y = Math.max(Y, v.y + r);
+    });
+    return {x: x - padding, X: X + padding, y: y - padding, Y: Y + 4 * padding};
   }
 
   function zoomToFit(render) {
-      var b = graphBounds();
-      var w = b.X - b.x, h = b.Y - b.y;
+      var b = graphBounds(6);
+      var w = (b.X - b.x), h = (b.Y - b.y);
       var cw = outer.attr("width"), ch = outer.attr("height");
       var s = Math.min(cw / w, ch / h);
       var tx = (-b.x * s + (cw / s - w) * s / 2),
