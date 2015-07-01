@@ -78,6 +78,43 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   var width, height;
   var isFullScreen = false;
 
+  var nodeMouseDown = false;
+  var nodeRadius = 5;
+  var nodeRadiusFunc = d3.scale.sqrt().range([10, 25]);
+  var linkSizeFunc = d3.scale.linear().range([3, 8]).domain([1, 10]);
+  var fontSizeFunc = d3.scale.linear().range([12, 16]);
+
+  var tooltip;
+  var tooltipShowing = false;
+
+  var color = d3.scale.category20();
+  var d3cola = cola.d3adaptor()
+      .linkDistance(function(d){
+        return nodeRadiusFunc(d.source.degree) * 2.2 + nodeRadiusFunc(d.target.degree) * 2.2 + 10;
+      })
+      // .avoidOverlaps(true)
+      .symmetricDiffLinkLengths(10);
+
+  var scaleFactor = 1;
+  var translation = [0, 0];
+  var tick = function(){};
+
+  var xScale = d3.scale.linear();
+  var yScale = d3.scale.linear();
+  var MAX_ZOOM = 8;
+
+  var zoomListener = d3.behavior.zoom()
+    .scaleExtent([0.2, MAX_ZOOM])
+    .on('zoom', zoomHandler);
+
+  function start() {
+    setSize();
+    d3cola.size([width, height]).start(20, 20, 20);
+    window.setTimeout(function(){
+      zoomToFit(true);
+    }, 500);
+  }
+
   function setSize() {
     if (isFullScreen) {
       width = window.screen.width;
@@ -111,23 +148,6 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       .y(yScale);
   }
 
-  function start() {
-    setSize();
-    d3cola.size([width, height]).start(20, 20, 20);
-    window.setTimeout(function(){
-      zoomToFit(true);
-    }, 500);
-  }
-
-  var nodeMouseDown = false;
-  var nodeRadius = 5;
-  var nodeRadiusFunc = d3.scale.sqrt().range([10, 25]);
-  var linkSizeFunc = d3.scale.linear().range([3, 8]).domain([1, 10]);
-  var fontSizeFunc = d3.scale.linear().range([12, 16]);
-
-  var tooltip;
-  var tooltipShowing = false;
-
   function mousemove() {
     if (!tooltipShowing) {
       return;
@@ -157,26 +177,6 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     }
     return ret ? 'block' : 'none';
   }
-
-  var color = d3.scale.category20();
-  var d3cola = cola.d3adaptor()
-      .linkDistance(function(d){
-        return nodeRadiusFunc(d.source.degree) * 2.2 + nodeRadiusFunc(d.target.degree) * 2.2 + 10;
-      })
-      // .avoidOverlaps(true)
-      .symmetricDiffLinkLengths(10);
-
-  var scaleFactor = 1;
-  var translation = [0, 0];
-  var tick = function(){};
-
-  var xScale = d3.scale.linear();
-  var yScale = d3.scale.linear();
-  var MAX_ZOOM = 8;
-
-  var zoomListener = d3.behavior.zoom()
-    .scaleExtent([0.2, MAX_ZOOM])
-    .on('zoom', zoomHandler);
 
   function zoomHandler() {
     if (nodeMouseDown) { return; }
@@ -224,7 +224,6 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   function dragstarted(d){
     d3.event.sourceEvent.stopPropagation();
     d3.select(this).classed("dragging", true);
-     //stop ticks while dragging
      d3cola.stop();
   }
 
@@ -618,7 +617,6 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       tick();
       moveToCoords();
     }
-
 
     window.addEventListener('resize', function(){
       start();
