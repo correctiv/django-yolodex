@@ -90,7 +90,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   var color = d3.scale.category20();
   var d3cola = cola.d3adaptor()
       .linkDistance(function(d){
-        return nodeRadiusFunc(d.source.degree) * 2.2 + nodeRadiusFunc(d.target.degree) * 2.2 + 10;
+        return nodeRadiusFunc(d.source.importance) * 2.2 + nodeRadiusFunc(d.target.importance) * 2.2 + 10;
       })
       // .avoidOverlaps(true)
       .symmetricDiffLinkLengths(10);
@@ -170,7 +170,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     tooltip.style('opacity', 1e-6);
   }
   function showLabel(d) {
-    var ret = d.subject || parseInt(getNodeTypeSettings(d, 'show-label'));
+    var ret = d.subject || parseInt(getNodeTypeSetting(d, 'show-label'));
     var zoomScale = zoomListener.scale();
     if (!ret && zoomScale > MAX_ZOOM / 3) {
       ret = true;
@@ -188,7 +188,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     padding = padding || 0;
     var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
     svg.selectAll(".node").each(function(v) {
-        var r = nodeRadiusFunc(v.degree);
+        var r = nodeRadiusFunc(v.importance);
         x = Math.min(x, v.x - r);
         X = Math.max(X, v.x + r);
         y = Math.min(y, v.y - r);
@@ -243,7 +243,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     d3cola.resume();
   }
 
-  function getNodeTypeSettings(d, n) {
+  function getNodeTypeSetting(d, n) {
     var t = types.node[d.type];
     if (!t) {
       return {};
@@ -260,7 +260,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   }
 
   function getNodeIcon(d) {
-    var icon = getNodeTypeSettings(d, 'icon');
+    var icon = getNodeTypeSetting(d, 'icon');
     if (icon.indexOf('\\') === 0) {
       return getFontIcon(icon);
     }
@@ -268,15 +268,19 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   }
 
   function getNodeIconColor(d) {
-    return getNodeTypeSettings(d, 'icon-color');
+    return getNodeTypeSetting(d, 'icon-color');
   }
 
   function getNodeColor(d) {
-    return getNodeTypeSettings(d, 'color');
+    return getNodeTypeSetting(d, 'color');
   }
 
   function getNodeStrokeColor(d){
-    return getNodeTypeSettings(d, 'stroke-color');
+    return getNodeTypeSetting(d, 'stroke-color');
+  }
+
+  function getNodeImportance(d) {
+    return d.degree * (getNodeTypeSetting(d, 'importance-factor') || 1);
   }
 
   d3.json(graphUrl, function (error, graph) {
@@ -332,6 +336,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         n.x = width / 2;
         n.y = height / 2;
       }
+      n.importance = getNodeImportance(n);
       idMapping[n.id] = n;
     });
     graph.edges = graph.edges.filter(function(e) {
@@ -342,8 +347,8 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       if (source === undefined || target === undefined) {
         return false;
       }
-      highestDegree = Math.max(highestDegree, source.degree);
-      highestDegree = Math.max(highestDegree, target.degree);
+      highestDegree = Math.max(highestDegree, source.importance);
+      highestDegree = Math.max(highestDegree, target.importance);
       var edgeKey = [e.sourceId, e.targetId].sort().join('-');
       var prev = distinctEdge[edgeKey];
       if (prev !== undefined) {
@@ -450,7 +455,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         .classed("node", true)
         .classed("subject", function(d){ return d.subject; })
         .attr("r", function(d) {
-          return nodeRadiusFunc(d.degree);
+          return nodeRadiusFunc(d.importance);
         })
         .style("fill", function (d) { return getNodeColor(d); })
         .style("stroke", function (d) {
@@ -498,7 +503,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         hideTooltip(d);
       })
       .attr('font-size', function(d) {
-        return fontSizeFunc(d.degree) + 'px';
+        return fontSizeFunc(d.importance) + 'px';
       })
       .text(function(d) {
         return getNodeIcon(d);
@@ -510,9 +515,9 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         .classed('node-label-shadow', true)
         .attr('display', showLabel)
         .attr('text-anchor', 'middle')
-        .attr('dy', function(d){ return nodeRadiusFunc(d.degree) * 1.75; })
+        .attr('dy', function(d){ return nodeRadiusFunc(d.importance) * 1.75; })
         .attr('font-size', function(d) {
-          return (fontSizeFunc(d.degree)) + 'px';
+          return (fontSizeFunc(d.importance)) + 'px';
         })
         .text(function(d) {
           return d.name;
@@ -521,9 +526,9 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         .classed('node-label', true)
         .attr('display', showLabel)
         .attr('text-anchor', 'middle')
-        .attr('dy', function(d){ return nodeRadiusFunc(d.degree) * 1.75; })
+        .attr('dy', function(d){ return nodeRadiusFunc(d.importance) * 1.75; })
         .attr('font-size', function(d) {
-          return (fontSizeFunc(d.degree)) + 'px';
+          return (fontSizeFunc(d.importance)) + 'px';
         })
         .text(function(d) {
           return d.name;
@@ -566,8 +571,8 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
           dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
           normX = deltaX / dist,
           normY = deltaY / dist,
-          sourcePadding = nodeRadiusFunc(d.source.degree) + 1,
-          targetPadding = nodeRadiusFunc(d.target.degree) + 1,
+          sourcePadding = nodeRadiusFunc(d.source.importance) + 1,
+          targetPadding = nodeRadiusFunc(d.target.importance) + 1,
           sourceX = sx + (sourcePadding * normX),
           sourceY = sy + (sourcePadding * normY),
           targetX = tx - (targetPadding * normX),
