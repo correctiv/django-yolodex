@@ -1,11 +1,17 @@
 {% load i18n %}
 
-<ul class="list-unstyled" id="network-{{ object.pk }}-types" style="position: absolute">
-</ul>
 
-<div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden">
-  <div class="spinner"></div>
+<div style="position: relative">
+  <ul class="list-unstyled" id="network-{{ object.pk }}-types" style="position: absolute">
+  </ul>
+  <ul class="grouping-list" id="network-{{ object.pk }}-groups"  style="position: absolute; bottom:0;">
+  </ul>
+
+  <div id="network-{{ object.pk }}" class="network-container" style="height:600px; overflow: hidden">
+    <div class="spinner"></div>
+  </div>
 </div>
+
 
 <div class="pull-right">
   <small>{% trans "Filtered representation" %}</small>

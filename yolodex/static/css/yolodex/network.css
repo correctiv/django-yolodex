@@ -22,8 +22,17 @@
 .highlighting .nodecontainer {
   opacity: 0.2;
 }
+
+.strong-highlighting .nodecontainer {
+  opacity: 0.1;
+}
 .highlighting .nodecontainer.highlighted {
   opacity: 1;
+}
+.strong-highlighting .nodecontainer.highlighted .node {
+  stroke: #000 !important;
+  stroke-width: 5px !important;
+  stroke-dasharray: 1;
 }
 .node-label {
   font-family: sans-serif;
@@ -93,5 +102,24 @@
 }
 
 .sources p {
-  padding: 5px;  
+  padding: 5px;
+}
+
+.grouping-list {
+  -webkit-touch-callout: none;
+          user-select: none;
+  -webkit-user-select: none;
+  list-style-type: none;
+  padding-left: 10px;
+  font-size: 13px;
+  font-family: sans-serif;
+}
+
+.grouping-list li ul li {
+  padding-bottom: 0px;
+  cursor: help;
+}
+
+.grouping-list li.highlighted {
+  font-weight: bold;
 }

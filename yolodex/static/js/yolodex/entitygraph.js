@@ -155,9 +155,10 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     var b = tooltip.node().getBoundingClientRect();
     var w = b.width;
     var h = b.height;
+    var coords = d3.mouse(outer[0][0]);
     tooltip
-      .style("left", (d3.event.pageX - w / 2) + "px")
-      .style("top", (d3.event.pageY - h - 15) + "px");
+      .style("left", (coords[0] - w / 2) + "px")
+      .style("top", (coords[1] - h - 15) + "px");
   }
 
   function showTooltip(text) {
@@ -325,6 +326,28 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       types = {};
     }
 
+    var groupings = null;
+
+    if (types.realm['group-by'] && options.groupContainerId) {
+      groupings = [];
+      var groups = types.realm['group-by'].split(',');
+      groups.forEach(function(group) {
+        var groupSplit = group.split(':');
+        var groupType = null;
+        if (groupSplit.length > 1){
+          groupType = groupSplit[0];
+          group = groupSplit[1];
+        } else {
+          group = groupSplit[0];
+        }
+        groupings.push({
+          group: group,
+          type: groupType,
+          members: {}
+        });
+      });
+    }
+
     var linkMapping = {};
     var idMapping = {};
     var distinctEdge = {};
@@ -422,6 +445,45 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
 
     nodeRadiusFunc.domain([1, highestDegree]);
     fontSizeFunc.domain([1, highestDegree]);
+
+    if (options.groupContainerId) {
+      var groupContainer = d3.select('#' + options.groupContainerId);
+      groupings.forEach(function(group) {
+        graph.nodes.forEach(function(node) {
+          if ((group.groupType === null || node.type === group.type) && node.data[group.group] !== undefined) {
+            var val = node.data[group.group];
+            group.members[val] = group.members[val] || 0;
+            group.members[val] += 1;
+          }
+        });
+        var groupCondition = function(member) {
+          return function(node) {
+            return (group.groupType === null || node.type === group.type) && node.data[group.group] == member;
+          };
+        };
+        var currentGroupContainer = groupContainer.append('li')
+          .append('ul').classed('list-unstyled', true);
+        currentGroupContainer.selectAll('li')
+          .data(d3.entries(group.members))
+          .enter()
+            .append('li')
+            .on('mouseover touchstart', function(d){
+              d3.select(this).classed('highlighted', true);
+              highlightNodes(groupCondition(d.key));
+            })
+            .on('mouseout touchend', function(d){
+              d3.select(this).classed('highlighted', false);
+              unHighlightNodes();
+            })
+            .attr('title', function(d) { return d.value; })
+            .text(function(d){
+              return d.key;
+            });
+      });
+    }
+
+
+
 
     d3cola
       .nodes(graph.nodes)
@@ -558,6 +620,19 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       svg.classed('highlighting', false);
       d3.selectAll('.nodecontainer').classed('highlighted', false);
       d3.selectAll('.link').classed('highlighted', false);
+    }
+
+    function highlightNodes(cond) {
+      graph.nodes.forEach(function(n) { n.highlighted = cond(n); });
+      svg.classed('highlighting', true);
+      svg.classed('strong-highlighting', true);
+      d3.selectAll('.nodecontainer').classed('highlighted', function(d){ return d.highlighted; });
+    }
+
+    function unHighlightNodes() {
+      svg.classed('highlighting', false);
+      svg.classed('strong-highlighting', false);
+      d3.selectAll('.nodecontainer').classed('highlighted', false);
     }
 
     tick = function(){

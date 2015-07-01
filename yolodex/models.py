@@ -37,6 +37,7 @@ class Realm(models.Model):
 
     def get_types(self):
         return {
+            'realm': dict(self.settings),
             'node': {
                 t.slug: dict(t.get_data()) for t in self.entitytype_set.all()
             },
