@@ -22,6 +22,9 @@ class Realm(models.Model):
 
     created_on = models.DateTimeField()
 
+    updated_on = models.DateTimeField(null=True, blank=True)
+    corrections = models.TextField(blank=True)
+
     class Meta:
         verbose_name = _('realm')
         verbose_name_plural = _('realms')

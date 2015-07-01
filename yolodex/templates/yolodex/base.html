@@ -15,5 +15,12 @@
     </a>
   </div>
 {% endblock %}
+<div class="clearfix"></div>
 {% block content %}{% endblock %}
+<div class="clearfix"></div>
+<div class="text-right">
+  <small>
+    <a class="text-muted" href="{% url 'yolodex:corrections' %}">{% trans "Corrections" %}</a>
+  </small>
+</div>
 {% endblock %}

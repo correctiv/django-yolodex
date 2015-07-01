@@ -43,7 +43,7 @@
     $('.source-link').click(function(e){
       e.preventDefault();
       $($(this).attr('href')).toggle();
-    })
+    });
     $(window).load(function() {
       var subjectId = "{{ object.id }}";
       var legendContainer = 'network-{{ object.pk }}-types';

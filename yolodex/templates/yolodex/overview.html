@@ -16,7 +16,7 @@
   {% for type in realm.entitytype_set.all %}
       <a href="{% url 'yolodex:entity_list' type=type.slug %}">{{ type.name_plural }}</a>{% if not forloop.last %}, {% endif %}
   {% endfor %}
-</p>
+  </p>
 
   {% include "yolodex/_network.html" with object=realm %}
 

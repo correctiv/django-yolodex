@@ -39,6 +39,10 @@ class RealmView(BaseRealmMixin, TemplateView):
     template_name = 'yolodex/overview.html'
 
 
+class RealmCorrectionsView(BaseRealmMixin, TemplateView):
+    template_name = 'yolodex/corrections.html'
+
+
 class EntitySearchView(BaseRealmMixin, ListView):
     model = Entity
     paginate_by = 50

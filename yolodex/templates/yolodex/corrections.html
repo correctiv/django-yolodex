@@ -1,0 +1,20 @@
+{% extends "yolodex/base.html" %}
+
+{% load i18n %}
+
+{% block title %}{{ type.name }} - {{ realm.name }}{% endblock %}
+
+{% block content %}
+  <h2>{% trans "Corrections" %}</h2>
+
+  {% if realm.updated_on %}
+  <p>
+    {% blocktrans with date=realm.updated_on|date:"SHORT_DATE_FORMAT" %}Last updated on {{ date }}{% endblocktrans %}
+  </p>
+  <div>
+    {{ realm.corrections|linebreaks }}
+  </div>
+  {% else %}
+    {% trans "There are no notable corrections since publication." %}
+  {% endif %}
+{% endblock %}

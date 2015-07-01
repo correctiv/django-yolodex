@@ -1,7 +1,9 @@
 from django.conf.urls import patterns, url
+from django.utils.translation import ugettext_lazy as _
 
 from .views import (
     RealmView,
+    RealmCorrectionsView,
     EntitySearchView,
     EntityListView,
     EntityDetailView,
@@ -19,7 +21,8 @@ router.register(r'api/entitytype', EntityTypeViewSet, 'entitytype')
 
 entity_urls = [
     url(r'^$', RealmView.as_view(), name='overview'),
-    url(r'^search/$', EntitySearchView.as_view(), name='search'),
+    url(_(r'^corrections/$'), RealmCorrectionsView.as_view(), name='corrections'),
+    url(_(r'^search/$'), EntitySearchView.as_view(), name='search'),
     url(r'^(?P<type>[\w-]+)/$',
         EntityListView.as_view(),
         name='entity_list'),
