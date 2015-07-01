@@ -149,9 +149,16 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     tooltipShowing = false;
     tooltip.style('opacity', 1e-6);
   }
+  function showLabel(d) {
+    var ret = d.subject || parseInt(getNodeTypeSettings(d, 'show-label'));
+    var zoomScale = zoomListener.scale();
+    if (!ret && zoomScale > MAX_ZOOM / 3) {
+      ret = true;
+    }
+    return ret ? 'block' : 'none';
+  }
 
   var color = d3.scale.category20();
-  var zoom = d3.behavior.zoom();
   var d3cola = cola.d3adaptor()
       .linkDistance(function(d){
         return nodeRadiusFunc(d.source.degree) * 2.2 + nodeRadiusFunc(d.target.degree) * 2.2 + 10;
@@ -165,13 +172,15 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
 
   var xScale = d3.scale.linear();
   var yScale = d3.scale.linear();
+  var MAX_ZOOM = 8;
 
   var zoomListener = d3.behavior.zoom()
-    .scaleExtent([0.2, 8])
+    .scaleExtent([0.2, MAX_ZOOM])
     .on('zoom', zoomHandler);
 
-  function zoomHandler(t, s) {
+  function zoomHandler() {
     if (nodeMouseDown) { return; }
+    svg.selectAll('.node-label').attr('display', showLabel);
     tick();
   }
 
@@ -499,13 +508,11 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         return getNodeIcon(d);
       });
     nodeContainer.each(function(d){
-      if (!(d.subject || parseInt(getNodeTypeSettings(d, 'show-label')))) {
-        return;
-      }
       var el = d3.select(this);
       el.append('text')
         .classed('node-label', true)
         .classed('node-label-shadow', true)
+        .attr('display', showLabel)
         .attr('text-anchor', 'middle')
         .attr('dy', function(d){ return nodeRadiusFunc(d.degree) * 1.75; })
         .attr('font-size', function(d) {
@@ -516,6 +523,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         });
       el.append('text')
         .classed('node-label', true)
+        .attr('display', showLabel)
         .attr('text-anchor', 'middle')
         .attr('dy', function(d){ return nodeRadiusFunc(d.degree) * 1.75; })
         .attr('font-size', function(d) {
