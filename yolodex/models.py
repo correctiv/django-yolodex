@@ -79,6 +79,10 @@ class Entity(models.Model):
     text = models.TextField(blank=True)
     sources = models.TextField(blank=True)
 
+    degree = models.IntegerField(null=True, blank=True)
+    in_degree = models.IntegerField(null=True, blank=True)
+    out_degree = models.IntegerField(null=True, blank=True)
+
     data = hstore.DictionaryField(blank=True)
 
     objects = hstore.HStoreManager()

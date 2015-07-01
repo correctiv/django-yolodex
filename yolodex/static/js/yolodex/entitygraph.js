@@ -332,7 +332,6 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         n.x = width / 2;
         n.y = height / 2;
       }
-      n.degree = 0;
       idMapping[n.id] = n;
     });
     graph.edges = graph.edges.filter(function(e) {
@@ -343,8 +342,6 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       if (source === undefined || target === undefined) {
         return false;
       }
-      source.degree += 1;
-      target.degree += 1;
       highestDegree = Math.max(highestDegree, source.degree);
       highestDegree = Math.max(highestDegree, target.degree);
       var edgeKey = [e.sourceId, e.targetId].sort().join('-');

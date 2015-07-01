@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.urlresolvers import resolve
 from django.template.defaultfilters import slugify
 
+import networkx as nx
 
 IS_FILE_RE = re.compile(r'\.([a-z]{2,4})$')
 YOLODEX_MEDIA_PATH = u'yolodex/sources/{}/{}'
@@ -182,3 +183,18 @@ def create_relationship(realm, edge, entity_cache, rel_typ_cache):
         )
     )
     return rel
+
+
+def assign_degree(realm):
+    from .models import Entity, Relationship
+    mg = nx.MultiDiGraph()
+    mg.add_nodes_from(Entity.objects.filter(realm=realm))
+    mg.add_edges_from((r.source, r.target) for r in Relationship.objects.filter(realm=realm))
+    for entity, deg in mg.in_degree_iter():
+        entity.in_degree = deg
+    for entity, deg in mg.out_degree_iter():
+        entity.out_degree = deg
+    for entity, deg in mg.degree_iter():
+        entity.degree = deg
+    for entity in mg.nodes_iter():
+        entity.save()

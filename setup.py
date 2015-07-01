@@ -34,6 +34,7 @@ setup(
         'Django<1.8',
         'django-hstore',
         'djangorestframework',
-        'django-parler'
+        'django-parler',
+        'networkx'
     ],
 )

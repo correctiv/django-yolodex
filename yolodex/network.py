@@ -78,6 +78,9 @@ class Network(object):
             'url': node.get_absolute_url(),
             'type': node.type.slug,
             'distance': node.distance,
+            'degree': node.degree,
+            'in_degree': node.in_degree,
+            'out_degree': node.out_degree,
             'data': dict(node.data)
         }
 

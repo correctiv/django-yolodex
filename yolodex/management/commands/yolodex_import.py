@@ -5,7 +5,7 @@ import unicodecsv
 from django.core.management.base import BaseCommand
 
 from ...models import Realm
-from ...utils import import_graph
+from ...utils import import_graph, assign_degree
 
 
 class Command(BaseCommand):
@@ -28,5 +28,7 @@ class Command(BaseCommand):
         realm = Realm.objects.get(slug=realm_slug)
         nodes = unicodecsv.DictReader(open(nodes_filename))
         edges = unicodecsv.DictReader(open(edges_filename))
-
+        self.stdout.write('Importing graph to %s' % realm)
         import_graph(realm, nodes, edges, media_dir=media_dir, clear=options['clear'])
+        self.stdout.write('Assigning degrees of %s' % realm)
+        assign_degree(realm)
