@@ -486,10 +486,13 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
             return (group.groupType === null || node.type === group.type) && node.data[group.group] == member;
           };
         };
+        var groupMembers = d3.entries(group.members).sort(function(a, b){
+          return a.key.localeCompare(b.key);
+        });
         var currentGroupContainer = groupContainer.append('li')
           .append('ul').classed('list-unstyled', true);
         currentGroupContainer.selectAll('li')
-          .data(d3.entries(group.members))
+          .data(groupMembers)
           .enter()
             .append('li')
             .on('mouseover touchstart', function(d){
