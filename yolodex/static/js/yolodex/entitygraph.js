@@ -383,6 +383,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       n.importance = getNodeImportance(n);
       idMapping[n.id] = n;
     });
+
     graph.edges = graph.edges.filter(function(e) {
       e.sourceId = e.source;
       e.targetId = e.target;
@@ -390,6 +391,9 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       var target = idMapping[e.targetId];
       if (source === undefined || target === undefined) {
         return false;
+      }
+      if (e.sourceId === e.targetId) {
+        return true;
       }
       highestDegree = Math.max(highestDegree, source.importance);
       highestDegree = Math.max(highestDegree, target.importance);
@@ -400,40 +404,20 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         return false;
       }
       distinctEdge[edgeKey] = 1;
-      return true;
-    });
 
-    var shouldPruneEdge = function(edge) {
-      // Remove connection to self
-      if (edge.sourceId === edge.targetId) {
-        return true;
-      }
-
-      var source = idMapping[edge.sourceId];
-      var target = idMapping[edge.targetId];
-      var pruned = false;
+      e.toPrune = false;
       if (source.distance > 0 &&
           source.degree > 20 &&
           target.distance > 1) {
-        pruned = true;
+        e.toPrune = true;
       }
       if (target.distance > 0 &&
           target.degree > 20 &&
           source.distance > 1) {
-        pruned = true;
+        e.toPrune = true;
       }
-      return pruned;
-    };
 
-    var shouldPruneNode = function(node) {
-      if (node.pruned && node.distance > 1) {
-        return true;
-      }
-      return false;
-    };
-
-    graph.edges = graph.edges.filter(function(e) {
-      return !shouldPruneEdge(e);
+      return true;
     });
 
     graph.edges.forEach(function(e) {
@@ -441,10 +425,30 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       var target = idMapping[e.targetId];
       source.rdegree = source.rdegree || 0;
       target.rdegree = target.rdegree || 0;
+      if (e.toPrune) { return; }
       source.rdegree += 1;
       target.rdegree += 1;
     });
+
     if (options.autoPrune) {
+
+      graph.edges = graph.edges.filter(function(e) {
+        if (e.toPrune) {
+          var source = idMapping[e.sourceId];
+          var target = idMapping[e.targetId];
+          return target.rdegree > 0 && source.rdegree > 0;
+        }
+        return true;
+      });
+      graph.nodes.forEach(function(n) {
+        n.rdegree = 0;
+      });
+      graph.edges.forEach(function(e) {
+        var source = idMapping[e.sourceId];
+        var target = idMapping[e.targetId];
+        source.rdegree += 1;
+        target.rdegree += 1;
+      });
       graph.nodes = graph.nodes.filter(function(n){
         return !!n.rdegree;
       });
