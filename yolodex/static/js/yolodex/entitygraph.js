@@ -170,18 +170,33 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     tooltipShowing = false;
     tooltip.style('opacity', 1e-6);
   }
-  function showLabel(d) {
-    var ret = d.subject || parseInt(getNodeTypeSetting(d, 'show-label'));
-    var zoomScale = zoomListener.scale();
-    if (!ret && zoomScale > MAX_ZOOM / 3) {
-      ret = true;
-    }
-    return ret ? 'block' : 'none';
+  function labelVisible(threshold) {
+    return function(d) {
+      var ret = d.subject || parseInt(getNodeTypeSetting(d, 'show-label'));
+      var zoomScale = zoomListener.scale();
+      if (!ret && zoomScale > threshold) {
+        ret = true;
+      }
+      return ret;
+    };
+  }
+  function switchFunc(func, t, f) {
+    return function(d) {
+      return func(d) ? t : f;
+    };
+  }
+  function showLabel(sel) {
+    var t = (MAX_ZOOM / 3) - 0.5;
+    var t2 = t + 0.5;
+    sel
+      .attr('display', switchFunc(labelVisible(t), 'block', 'none'))
+      .style('opacity', switchFunc(labelVisible(t2), '1', '0'));
   }
 
   function zoomHandler() {
     if (nodeMouseDown) { return; }
-    svg.selectAll('.node-label').attr('display', showLabel);
+    svg.selectAll('.node-label')
+      .call(showLabel);
     tick();
   }
 
@@ -581,7 +596,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       el.append('text')
         .classed('node-label', true)
         .classed('node-label-shadow', true)
-        .attr('display', showLabel)
+        .call(showLabel)
         .attr('text-anchor', 'middle')
         .attr('dy', function(d){ return nodeRadiusFunc(d.importance) * 1.75; })
         .attr('font-size', function(d) {
@@ -592,7 +607,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         });
       el.append('text')
         .classed('node-label', true)
-        .attr('display', showLabel)
+        .call(showLabel)
         .attr('text-anchor', 'middle')
         .attr('dy', function(d){ return nodeRadiusFunc(d.importance) * 1.75; })
         .attr('font-size', function(d) {

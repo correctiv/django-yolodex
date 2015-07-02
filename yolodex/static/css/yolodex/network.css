@@ -37,6 +37,12 @@
 .node-label {
   font-family: sans-serif;
   fill: #333;
+  opacity: 1;
+  -webkit-transition: opacity 0.4s linear;
+     -moz-transition: opacity 0.4s linear;
+      -ms-transition: opacity 0.4s linear;
+       -o-transition: opacity 0.4s linear;
+          transition: opacity 0.4s linear;
 }
 
 .node-label-shadow {
