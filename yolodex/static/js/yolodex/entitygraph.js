@@ -61,6 +61,12 @@ if (!String.fromCodePoint) {
   }());
 }
 
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+  this.parentNode.appendChild(this);
+  });
+};
+
 
 function EntityGraph(subjectId, containerId, graphUrl, options) {
   options = options || {};
@@ -531,7 +537,10 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     var nodeContainer = svg.selectAll(".node")
         .data(graph.nodes)
       .enter().append("g")
-        .classed("nodecontainer", true);
+        .classed("nodecontainer", true)
+        .on("mouseover touchstart", function(){
+          d3.select(this).moveToFront();
+        });
 
     var nodes = nodeContainer
       .append('circle')
