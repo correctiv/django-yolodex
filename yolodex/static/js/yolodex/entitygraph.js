@@ -694,7 +694,13 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
           sourceY = sy + (sourcePadding * normY),
           targetX = tx - (targetPadding * normX),
           targetY = ty - (targetPadding * normY);
-        return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
+
+
+        if (options['link-style'] === 'curved') {
+          return "M" + sx + "," + sy + "A" + dist + "," + dist + " 0 0,1 " + tx + "," + ty;
+        } else {
+          return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
+        }
       });
 
       nodeContainer.attr('transform', function(d){
