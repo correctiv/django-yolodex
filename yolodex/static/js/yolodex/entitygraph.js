@@ -471,7 +471,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     nodeRadiusFunc.domain([1, highestDegree]);
     fontSizeFunc.domain([1, highestDegree]);
 
-    if (options.groupContainerId) {
+    if (options.groupContainerId && groupings !== null) {
       var groupContainer = d3.select('#' + options.groupContainerId);
       groupings.forEach(function(group) {
         graph.nodes.forEach(function(node) {
