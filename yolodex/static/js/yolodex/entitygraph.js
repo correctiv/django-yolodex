@@ -598,23 +598,28 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         .classed('node-label-shadow', true)
         .call(showLabel)
         .attr('text-anchor', 'middle')
-        .attr('dy', function(d){ return nodeRadiusFunc(d.importance) * 1.75; })
         .attr('font-size', function(d) {
           return (fontSizeFunc(d.importance)) + 'px';
         })
-        .text(function(d) {
-          return d.name;
+        .attr('y', function(l, i){
+          return nodeRadiusFunc(d.importance) * 1.75;
+        })
+        .tspans(function(d) {
+          return d3.wordwrap(d.name, 20);
         });
+
       el.append('text')
         .classed('node-label', true)
         .call(showLabel)
         .attr('text-anchor', 'middle')
-        .attr('dy', function(d){ return nodeRadiusFunc(d.importance) * 1.75; })
         .attr('font-size', function(d) {
           return (fontSizeFunc(d.importance)) + 'px';
         })
-        .text(function(d) {
-          return d.name;
+        .attr('y', function(l, i){
+          return nodeRadiusFunc(d.importance) * 1.75;
+        })
+        .tspans(function(d) {
+          return d3.wordwrap(d.name, 20);
         });
     });
 
