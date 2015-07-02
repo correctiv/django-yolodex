@@ -501,7 +501,13 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
           return linkSizeFunc(d.weight);
         })
         .on('mouseover touchstart', function(d){
-          showTooltip(d.data.label + ' -> ' + d.target.name);
+          var s = [d.source.name];
+          if (d.data.label) {
+            s = s.concat(['➞', '(' + d.data.label + ')']);
+          }
+
+          s = s.concat(['➞', d.target.name]);
+          showTooltip(s.join(' '));
         })
         .on('mouseout touchend', function(d){
           hideTooltip(d);
