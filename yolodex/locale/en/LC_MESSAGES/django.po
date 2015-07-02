@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-06-29 18:14+0200\n"
+"POT-Creation-Date: 2015-07-02 17:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,51 +22,51 @@ msgstr ""
 msgid "Yolodex App"
 msgstr ""
 
-#: models.py:27
+#: models.py:29
 msgid "realm"
 msgstr ""
 
-#: models.py:28
+#: models.py:30
 msgid "realms"
 msgstr ""
 
-#: models.py:58
+#: models.py:61
 msgid "entity type"
 msgstr ""
 
-#: models.py:59
+#: models.py:62
 msgid "entity types"
 msgstr ""
 
-#: models.py:89
+#: models.py:96
 msgid "entity"
 msgstr ""
 
-#: models.py:90
+#: models.py:97
 msgid "entities"
 msgstr ""
 
-#: models.py:126
+#: models.py:133
 msgid "relationship type"
 msgstr ""
 
-#: models.py:127
+#: models.py:134
 msgid "relationship types"
 msgstr ""
 
-#: models.py:182
+#: models.py:189
 msgid "relationship"
 msgstr ""
 
-#: models.py:183
+#: models.py:190
 msgid "relationships"
 msgstr ""
 
-#: templates/yolodex/_network.html:11
+#: templates/yolodex/_network.html:17
 msgid "Filtered representation"
 msgstr ""
 
-#: templates/yolodex/_network.html:13
+#: templates/yolodex/_network.html:19
 msgid "Fullscreen"
 msgstr ""
 
@@ -85,6 +85,19 @@ msgstr ""
 
 #: templates/yolodex/base.html:14
 msgid "Go back to overview"
+msgstr ""
+
+#: templates/yolodex/base.html:23 templates/yolodex/corrections.html:8
+msgid "Corrections"
+msgstr ""
+
+#: templates/yolodex/corrections.html:12
+#, python-format
+msgid "Last updated on %(date)s"
+msgstr ""
+
+#: templates/yolodex/corrections.html:18
+msgid "There are no notable corrections since publication."
 msgstr ""
 
 #: templates/yolodex/entity_detail.html:18
@@ -107,4 +120,12 @@ msgstr ""
 
 #: templates/yolodex/overview.html:15
 msgid "Search for the following:"
+msgstr ""
+
+#: urls.py:24
+msgid "^corrections/$"
+msgstr ""
+
+#: urls.py:25
+msgid "^search/$"
 msgstr ""
