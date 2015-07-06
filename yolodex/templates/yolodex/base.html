@@ -9,11 +9,11 @@
       {{ realm.name }}
     </a>
   </h1>
-  <div class="text-right">
+  <aside>
     <a href="{{ realm.get_absolute_url }}">
       {% trans "Go back to overview" %}
     </a>
-  </div>
+  </aside>
 {% endblock %}
 <div class="clearfix"></div>
 {% block content %}{% endblock %}
