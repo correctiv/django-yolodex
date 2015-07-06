@@ -72,7 +72,8 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   options = options || {};
   var defaults = {
     respectCoords: false,
-    autoPrune: true
+    autoPrune: true,
+    groupingMinHeight: 350
   };
   for (var k in defaults) {
     options[k] = options[k] === undefined ? defaults[k] : options[k];
@@ -349,7 +350,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
 
     var groupings = null;
 
-    if (types.realm['group-by'] && options.groupContainerId) {
+    if (types.realm['group-by'] && options.groupContainerId && height > options.groupingMinHeight) {
       groupings = [];
       var groups = types.realm['group-by'].split(',');
       groups.forEach(function(group) {
