@@ -73,7 +73,8 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   var defaults = {
     respectCoords: false,
     autoPrune: true,
-    groupingMinHeight: 350
+    groupingMinHeight: 350,
+    scrollZoom: true
   };
   for (var k in defaults) {
     options[k] = options[k] === undefined ? defaults[k] : options[k];
@@ -333,6 +334,11 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
         zoomToFit();
       });
 
+    if (!options.scrollZoom){
+      outer.on("wheel.zoom", null);
+      outer.on("mousewheel.zoom", null);
+      outer.on("MozMousePixelScroll.zoom", null);
+    }
 
     types = graph.types;
     if (types && options.legendContainerId) {
