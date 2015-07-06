@@ -58,7 +58,7 @@ class EntitySearchView(BaseRealmMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super(EntitySearchView, self).get_context_data(**kwargs)
         ctx['query'] = self.query
-        ctx['getvars'] = '&q={}'.format(self.query)
+        ctx['getvars'] = u'&q={}'.format(self.query)
         return ctx
 
 
