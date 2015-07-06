@@ -584,7 +584,11 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
             return;
           }
           if (!d.subject) {
-            document.location.href = d.url;
+            var url = d.url;
+            if (options.embed) {
+              url += 'embed/';
+            }
+            document.location.href = url;
           }
         })
         .call(drag);
