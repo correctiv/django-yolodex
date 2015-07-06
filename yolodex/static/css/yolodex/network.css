@@ -52,6 +52,7 @@
 }
 
 .subject {
+  stroke: #000 !important;
   stroke-width: 4px;
   stroke-dasharray: 1,1;
   cursor: auto;
