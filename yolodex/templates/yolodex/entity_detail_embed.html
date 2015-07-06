@@ -8,7 +8,7 @@
   {% include "yolodex/_network.html" with embed=True %}
 
   <div class="pull-left">
-    <a href="{{ SITE_URL }}{{ realm.get_absolute_url }}">{{ realm.name }}</a> - 
+    <a href="{{ SITE_URL }}{{ realm.get_absolute_url }}">{{ realm.name }}</a> -
     <a href="{{ SITE_URL }}">{{ SITE_NAME }}</a>
   </div>
 
@@ -28,10 +28,11 @@
       var legendContainer = 'network-{{ object.pk }}-types';
       var containerId = "network-{{ object.pk }}";
       var graphUrl = '{% url 'yolodex:entity-network' pk=object.pk %}';
-
+      {% dictKeyLookup realm.settings 'link-style' as link_style %}
       var graph = EntityGraph(subjectId, containerId, graphUrl, {
         legendContainerId: legendContainer,
         fullscreenSelector: '.network-fullscreen',
+        linkStyle: '{{ link_style }}',
         embed: true
       });
     });

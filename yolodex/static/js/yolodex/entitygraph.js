@@ -696,7 +696,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
           targetY = ty - (targetPadding * normY);
 
 
-        if (options['link-style'] === 'curved') {
+        if (options.linkStyle === 'curved') {
           return "M" + sx + "," + sy + "A" + dist + "," + dist + " 0 0,1 " + tx + "," + ty;
         } else {
           return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;

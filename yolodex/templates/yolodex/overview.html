@@ -36,12 +36,14 @@
         var legendContainer = 'network-{{ realm.pk }}-types';
         var containerId = "network-{{ realm.pk }}";
         {% dictKeyLookup realm.settings 'focus-type' as focus_type %}
+        {% dictKeyLookup realm.settings 'link-style' as link_style %}
         {% if focus_type %}
           var graphUrl = '{% url 'yolodex:entitytype-network' pk=focus_type %}';
           var graph = EntityGraph(subjectId, containerId, graphUrl, {
             respectCoords: true,
             legendContainerId: legendContainer,
-            fullscreenSelector: '.network-fullscreen'
+            fullscreenSelector: '.network-fullscreen',
+            linkStyle: '{{ link_style }}'
           });
         {% endif %}
       });

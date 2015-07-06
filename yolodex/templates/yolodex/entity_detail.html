@@ -50,11 +50,12 @@
       var groupContainer = 'network-{{ object.pk }}-groups';
       var containerId = "network-{{ object.pk }}";
       var graphUrl = '{% url 'yolodex:entity-network' pk=object.pk %}';
-
+      {% dictKeyLookup realm.settings 'link-style' as link_style %}
       var graph = EntityGraph(subjectId, containerId, graphUrl, {
         legendContainerId: legendContainer,
         groupContainerId: groupContainer,
-        fullscreenSelector: '.network-fullscreen'
+        fullscreenSelector: '.network-fullscreen',
+        linkStyle: '{{ link_style }}'
       });
     });
   </script>
