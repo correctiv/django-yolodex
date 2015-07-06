@@ -7,8 +7,6 @@
 {% block simplenav %}{% endblock %}
 
 {% block content %}
-  <h1>{{ realm.name }}</h1>
-
   {% dictKeyLookup realm.settings 'search-placeholder' as search_placeholder %}
   {% include "yolodex/_search.html" with search_placeholder=search_placeholder %}
 

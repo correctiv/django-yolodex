@@ -3,18 +3,7 @@
 {% load i18n %}
 
 {% block main %}
-{% block simplenav %}
-  <h1>
-    <a href="{{ realm.get_absolute_url }}">
-      {{ realm.name }}
-    </a>
-  </h1>
-  <aside>
-    <a href="{{ realm.get_absolute_url }}">
-      {% trans "Go back to overview" %}
-    </a>
-  </aside>
-{% endblock %}
+{% block simplenav %}{% endblock %}
 <div class="clearfix"></div>
 {% block content %}{% endblock %}
 <div class="clearfix"></div>
