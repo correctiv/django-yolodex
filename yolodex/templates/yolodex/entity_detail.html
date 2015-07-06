@@ -13,6 +13,7 @@
   {% endif %}
 
   {% include "yolodex/_network.html" %}
+  <div class="clearfix"></div>
 
   <h3>
     {% blocktrans with name=object.name count count=network.edges|length %}{{ name }} has one connection{% plural %}{{ name }} has {{ count }} connections{% endblocktrans %}
