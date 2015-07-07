@@ -123,16 +123,21 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
     }, 500);
   }
 
-  function setSize() {
+  function setSize(fullScreenChanged) {
+    var oldWidth = width, oldHeight = height;
     if (isFullScreen) {
       width = window.screen.width;
       height = window.screen.height;
       container.style('width', width + 'px');
     } else {
-      container.style('width', null);
-      container.style('height', null);
+      if (fullScreenChanged) {
+        container.style('width', null);
+      }
       var containerBounds = container.node().getBoundingClientRect();
       width = containerBounds.width;
+      if (width === oldWidth) {
+        return;
+      }
       if (options.embed) {
         height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
         height = height - 30;
@@ -775,22 +780,22 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
 
   document.addEventListener("fullscreenchange", function () {
       isFullScreen = document.fullscreen;
-      setSize();
+      setSize(true);
   }, false);
 
   document.addEventListener("mozfullscreenchange", function () {
       isFullScreen = document.mozFullScreen;
-      setSize();
+      setSize(true);
   }, false);
 
   document.addEventListener("webkitfullscreenchange", function () {
       isFullScreen = document.webkitIsFullScreen;
-      setSize();
+      setSize(true);
   }, false);
 
   document.addEventListener("msfullscreenchange", function () {
       isFullScreen = document.msFullscreenElement;
-      setSize();
+      setSize(true);
   }, false);
 
   if (options.fullscreenSelector) {
