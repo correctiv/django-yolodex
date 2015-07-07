@@ -340,9 +340,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       });
 
     if (!options.scrollZoom){
-      outer.on("wheel.zoom", null);
-      outer.on("mousewheel.zoom", null);
-      outer.on("MozMousePixelScroll.zoom", null);
+      outer.on(".zoom", null);
     }
 
     types = graph.types;
