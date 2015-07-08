@@ -95,7 +95,7 @@ class YolodexImporter(object):
     def import_graph_from_files(self, node_file, edge_file, **kwargs):
         nodes = unicodecsv.DictReader(node_file)
         edges = unicodecsv.DictReader(edge_file)
-        self.import_graph(nodes, edges)
+        self.import_graph(nodes, edges, **kwargs)
 
     def import_graph(self, nodes, edges, media_dir=None, clear=False, update=False):
         if clear:
