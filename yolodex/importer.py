@@ -111,7 +111,7 @@ class YolodexImporter(object):
         self.create_relationships(edges, media_dir=media_dir)
 
         if update:
-            self.realm = self.version
+            self.realm.version = self.version
             self.realm.save()
             self.clear_old_versions()
 
