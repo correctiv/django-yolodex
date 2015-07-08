@@ -33,10 +33,21 @@ class Command(BaseCommand):
         logging.basicConfig(level=logging.INFO)
         self.stdout.write('Importing graph to %s' % realm)
         yimp = YolodexImporter(realm)
-        yimp.import_graph_from_files(open(nodes_filename), open(edges_filename),
+        kwargs = dict(
             media_dir=media_dir,
             clear=options['clear'],
-            update=options['update'],
+            update=options['update']
         )
+        if nodes_filename.startswith(('http://', 'https://')):
+            yimp.import_graph_from_urls(
+                nodes_filename, edges_filename, **kwargs
+            )
+        else:
+            yimp.import_graph_from_files(
+                open(nodes_filename), open(edges_filename), **kwargs
+            )
+
+        self.stdout.write('Import done. Stats: %s' % yimp.stats)
         self.stdout.write('Assigning degrees of %s' % realm)
         yimp.assign_degree()
+        self.stdout.write('Done.')

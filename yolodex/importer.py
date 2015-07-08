@@ -1,6 +1,12 @@
 import shutil
 import logging
 import os
+import io
+
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlopen
 
 from django.template.defaultfilters import slugify
 
@@ -39,16 +45,25 @@ def update_object(obj, dic):
             changed = True
     return changed
 
+STAT_VALUES = {
+    None: 'unchanged',
+    False: 'updated',
+    True: 'created'
+}
+
 
 def update_or_create(klass, search_dict, attr_dict):
+    created = True
     try:
         obj = klass.objects.get(**search_dict)
+        created = None
         if update_object(obj, attr_dict):
+            created = False
             obj.save()
     except klass.DoesNotExist:
         attr_dict.update(search_dict)
         obj = klass.objects.create(**attr_dict)
-    return obj
+    return obj, created
 
 
 class YolodexImporter(object):
@@ -58,22 +73,24 @@ class YolodexImporter(object):
 
     def __init__(self, realm):
         self.realm = realm
+        self.stats = {
+            'entity_created': 0,
+            'entity_updated': 0,
+            'entity_deleted': 0,
+            'entity_unchanged': 0,
+            'relationship_created': 0,
+            'relationship_updated': 0,
+            'relationship_deleted': 0,
+            'relationship_unchanged': 0,
+        }
 
-    def clear(self):
-        logger.info("Deleting all entities/relationships of realm %s", self.realm)
-        Entity.objects.filter(realm=self.realm).delete()
-        Relationship.objects.filter(realm=self.realm).delete()
-
-    def clear_old_versions(self):
-        logger.info("Deleting entities/relationships of realm %s with old version %s", self.realm, self.old_version)
-        Entity.objects.filter(realm=self.realm, version=self.old_version).delete()
-        Relationship.objects.filter(realm=self.realm, version=self.old_version).delete()
-
-    def get_entitytype(self, type_slug):
-        return get_from_cache_or_create(type_slug, EntityType, self.entity_type_cache, self.realm)
-
-    def get_relationshiptype(self, reltype_slug):
-        return get_from_cache_or_create(reltype_slug, RelationshipType, self.rel_typ_cache, self.realm)
+    def import_graph_from_urls(self, node_url, edge_url, consume=True, **kwargs):
+        node_file = urlopen(node_url)
+        edge_file = urlopen(edge_url)
+        if consume:
+            node_file = io.BytesIO(node_file.read())
+            edge_file = io.BytesIO(edge_file.read())
+        self.import_graph_from_files(node_file, edge_file, **kwargs)
 
     def import_graph_from_files(self, node_file, edge_file, **kwargs):
         nodes = unicodecsv.DictReader(node_file)
@@ -98,10 +115,22 @@ class YolodexImporter(object):
             self.realm.save()
             self.clear_old_versions()
 
+    def assign_degree(self):
+        mg = nx.MultiDiGraph()
+        mg.add_nodes_from(Entity.objects.filter(realm=self.realm))
+        mg.add_edges_from((r.source, r.target) for r in Relationship.objects.filter(realm=self.realm))
+        for entity, deg in mg.in_degree_iter():
+            entity.in_degree = deg
+        for entity, deg in mg.out_degree_iter():
+            entity.out_degree = deg
+        for entity, deg in mg.degree_iter():
+            entity.degree = deg
+        for entity in mg.nodes_iter():
+            entity.save()
+
     def create_nodes(self, nodes, media_dir=None):
         for node in nodes:
             entity = self.create_entity(node)
-            logger.info("Entity %s created", entity)
             if entity is not None and media_dir is not None:
                 raw_sources = get_raw_sources(self.realm, entity.sources)
                 self.import_sources([s[1] for s in raw_sources if s[0] == 'file'], media_dir)
@@ -109,7 +138,6 @@ class YolodexImporter(object):
     def create_relationships(self, edges, media_dir=None):
         for edge in edges:
             rel = self.create_relationship(edge)
-            logger.info("Relationship %s created", rel)
             if rel is not None and media_dir is not None:
                 raw_sources = get_raw_sources(self.realm, rel.sources)
                 self.import_sources([s[1] for s in raw_sources if s[0] == 'file'], media_dir)
@@ -122,6 +150,19 @@ class YolodexImporter(object):
             mkdir_p(target_dir)
             if not os.path.exists(target):
                 shutil.copyfile(src, target)
+
+    def clear(self):
+        logger.info("Deleting all entities/relationships of realm %s", self.realm)
+        self.delete_entities(Entity.objects.filter(realm=self.realm))
+        self.delete_relationships(Relationship.objects.filter(realm=self.realm).delete())
+
+    def clear_old_versions(self):
+        logger.info("Deleting entities/relationships of realm %s with old version %s", self.realm, self.old_version)
+        e_qs = Entity.objects.filter(realm=self.realm, version=self.old_version)
+        self.delete_entities(e_qs)
+
+        r_qs = Relationship.objects.filter(realm=self.realm, version=self.old_version)
+        self.delete_relationships(r_qs)
 
     def create_entity(self, node):
         name = node.pop('label')
@@ -147,7 +188,9 @@ class YolodexImporter(object):
             data=data,
             version=self.version
         )
-        entity = update_or_create(Entity, search_dict, attr_dict)
+        entity, created = update_or_create(Entity, search_dict, attr_dict)
+        logger.info("Entity %s %s", entity, STAT_VALUES[created])
+        self.record_entity_stat(created)
         self.entity_cache[slug] = entity
         return entity
 
@@ -172,26 +215,38 @@ class YolodexImporter(object):
             realm=self.realm,
             source=source,
             target=target,
-            type=reltype
+            type=reltype,
+            data=data,
         )
         attr_dict = dict(
-            sources=sources,
             directed=edge_type == 'directed',
-            data=data,
+            sources=sources,
             version=self.version
         )
-        rel = update_or_create(Relationship, search_dict, attr_dict)
+        rel, created = update_or_create(Relationship, search_dict, attr_dict)
+        logger.info("Relationship %s %s", rel, STAT_VALUES[created])
+        self.record_relationship_stat(created)
         return rel
 
-    def assign_degree(self):
-        mg = nx.MultiDiGraph()
-        mg.add_nodes_from(Entity.objects.filter(realm=self.realm))
-        mg.add_edges_from((r.source, r.target) for r in Relationship.objects.filter(realm=self.realm))
-        for entity, deg in mg.in_degree_iter():
-            entity.in_degree = deg
-        for entity, deg in mg.out_degree_iter():
-            entity.out_degree = deg
-        for entity, deg in mg.degree_iter():
-            entity.degree = deg
-        for entity in mg.nodes_iter():
-            entity.save()
+    def delete_entities(self, e_qs):
+        self.stats['entity_deleted'] = e_qs.count()
+        e_qs.delete()
+
+    def delete_relationships(self, r_qs):
+        self.stats['relationsip_deleted'] = r_qs.count()
+        r_qs.delete()
+
+    def get_entitytype(self, type_slug):
+        return get_from_cache_or_create(type_slug, EntityType, self.entity_type_cache, self.realm)
+
+    def get_relationshiptype(self, reltype_slug):
+        return get_from_cache_or_create(reltype_slug, RelationshipType, self.rel_typ_cache, self.realm)
+
+    def record_stat(self, typ, created):
+        self.stats['%s_%s' % (typ, STAT_VALUES[created])] += 1
+
+    def record_entity_stat(self, created):
+        self.record_stat('entity', created)
+
+    def record_relationship_stat(self, created):
+        self.record_stat('relationship', created)
