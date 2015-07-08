@@ -1,11 +1,10 @@
 from optparse import make_option
-
-import unicodecsv
+import logging
 
 from django.core.management.base import BaseCommand
 
 from ...models import Realm
-from ...utils import import_graph, assign_degree
+from ...importer import YolodexImporter
 
 
 class Command(BaseCommand):
@@ -18,6 +17,11 @@ class Command(BaseCommand):
             dest='clear',
             default=False,
             help='Clear all entities/relationships in the given realm before import'),
+        make_option('--update',
+            action='store_true',
+            dest='update',
+            default=False,
+            help='Update realm and entities/relationships to next version'),
     )
 
     def handle(self, *args, **options):
@@ -26,9 +30,13 @@ class Command(BaseCommand):
         if len(args) > 3:
             media_dir = args[3]
         realm = Realm.objects.get(slug=realm_slug)
-        nodes = unicodecsv.DictReader(open(nodes_filename))
-        edges = unicodecsv.DictReader(open(edges_filename))
+        logging.basicConfig(level=logging.INFO)
         self.stdout.write('Importing graph to %s' % realm)
-        import_graph(realm, nodes, edges, media_dir=media_dir, clear=options['clear'])
+        yimp = YolodexImporter(realm)
+        yimp.import_graph_from_files(open(nodes_filename), open(edges_filename),
+            media_dir=media_dir,
+            clear=options['clear'],
+            update=options['update'],
+        )
         self.stdout.write('Assigning degrees of %s' % realm)
-        assign_degree(realm)
+        yimp.assign_degree()
