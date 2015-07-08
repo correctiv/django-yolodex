@@ -20,6 +20,9 @@ class Realm(models.Model):
 
     settings = hstore.DictionaryField(blank=True)
 
+    node_url = models.CharField(max_length=255, blank=True)
+    edge_url = models.CharField(max_length=255, blank=True)
+
     created_on = models.DateTimeField()
     version = models.IntegerField(default=0)
 
