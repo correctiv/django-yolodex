@@ -165,7 +165,7 @@ class YolodexImporter(object):
         self.delete_relationships(r_qs)
 
     def create_entity(self, node):
-        name = node.pop('label')
+        name = node.pop('name')
         slug = node.pop('id', slugify(name))
         if not slug:
             return
