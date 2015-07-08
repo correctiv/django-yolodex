@@ -8,6 +8,7 @@ from parler.admin import TranslatableAdmin
 
 from .models import Realm, EntityType, Entity, Relationship, RelationshipType
 from .importer import YolodexImporter
+from .api_views import clear_network_cache
 
 
 class RealmAdmin(admin.ModelAdmin):
@@ -30,11 +31,16 @@ class RealmAdmin(admin.ModelAdmin):
 
         realm = Realm.objects.get(pk=realm_id)
         yimp = YolodexImporter(realm)
-        yimp.import_graph_from_urls(
-            realm.node_url, realm.edge_url,
-            update=True,
-        )
-        self.message_user(request, _("Graph updated: %s" % yimp.stats))
+        try:
+            yimp.import_graph_from_urls(
+                realm.node_url, realm.edge_url,
+                update=True,
+            )
+            clear_network_cache(realm, Entity.objects.filter(realm=realm))
+        except Exception as e:
+            self.message_user(request, _("Graph update failed: %s" % e))
+        else:
+            self.message_user(request, _("Graph updated: %s" % yimp.stats))
         return redirect('admin:yolodex_realm_change', realm.pk)
 
 

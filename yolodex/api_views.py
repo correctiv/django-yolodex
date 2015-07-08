@@ -76,6 +76,25 @@ class RealmApiMixin(object):
         return self.realm
 
 
+def make_cache_key(realm, obj, kind='entity'):
+    return 'yolodex:api:{kind}:network:{realm}:{obj}'.format(
+        kind=kind,
+        realm=realm.pk,
+        obj=obj.pk
+    )
+
+
+def clear_network_cache(realm, entities):
+    types = set()
+    cache_keys = set()
+    for e in entities:
+        types.add(e.type)
+        cache_keys.add(make_cache_key(realm, e, kind='entity'))
+    for t in types:
+        cache_keys.add(make_cache_key(realm, t, kind='entitytype'))
+    cache.delete_many(cache_keys)
+
+
 class EntityViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
     """
     A viewset that provides the standard actions
@@ -104,10 +123,8 @@ class EntityViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         obj = self.get_object()
         realm = self.get_realm(request)
 
-        cache_key = 'yolodex:api:entity:network:{realm}:{entity}'.format(
-            realm=realm.pk,
-            entity=obj.pk
-        )
+        cache_key = make_cache_key(realm, obj, kind='entity')
+
         network = cache.get(cache_key)
         if network is None:
             network = obj.get_network(level=2).to_dict(realm=realm)
@@ -144,10 +161,8 @@ class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         obj = self.get_object()
         realm = self.get_realm(request)
 
-        cache_key = 'yolodex:api:entitytype:network:{realm}:{type}'.format(
-            realm=realm.pk,
-            type=obj.pk
-        )
+        cache_key = make_cache_key(realm, obj, kind='entitytype')
+
         network = cache.get(cache_key)
         if network is None:
             qs = Entity.objects.filter(realm=realm, type=obj)
