@@ -21,6 +21,7 @@ class Realm(models.Model):
     settings = hstore.DictionaryField(blank=True)
 
     created_on = models.DateTimeField()
+    version = models.IntegerField(default=0)
 
     updated_on = models.DateTimeField(null=True, blank=True)
     corrections = models.TextField(blank=True)
@@ -79,6 +80,7 @@ class Entity(models.Model):
 
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
+    version = models.IntegerField(default=0)
 
     text = models.TextField(blank=True)
     sources = models.TextField(blank=True)
@@ -180,6 +182,7 @@ class Relationship(models.Model):
     directed = models.BooleanField(default=True)
     type = models.ForeignKey(RelationshipType, null=True, on_delete=models.SET_NULL)
     sources = models.TextField(blank=True)
+    version = models.IntegerField(default=0)
 
     data = hstore.DictionaryField(blank=True)
 
