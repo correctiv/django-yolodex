@@ -9,6 +9,7 @@ except ImportError:
     from urllib import urlopen
 
 from django.template.defaultfilters import slugify
+from django.db import transaction
 
 import networkx as nx
 import unicodecsv
@@ -106,14 +107,14 @@ class YolodexImporter(object):
         if update:
             self.old_version = self.version
             self.version = self.version + 1
+        with transaction.atomic():
+            self.create_nodes(nodes, media_dir=media_dir)
+            self.create_relationships(edges, media_dir=media_dir)
 
-        self.create_nodes(nodes, media_dir=media_dir)
-        self.create_relationships(edges, media_dir=media_dir)
-
-        if update:
-            self.realm.version = self.version
-            self.realm.save()
-            self.clear_old_versions()
+            if update:
+                self.realm.version = self.version
+                self.realm.save()
+                self.clear_old_versions()
 
     def assign_degree(self):
         mg = nx.MultiDiGraph()
