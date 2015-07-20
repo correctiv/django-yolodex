@@ -36,7 +36,8 @@ class RealmAdmin(admin.ModelAdmin):
                 realm.node_url, realm.edge_url,
                 update=True,
             )
-            clear_network_cache(realm, Entity.objects.filter(realm=realm))
+            for lang in realm.get_languages():
+                clear_network_cache(lang, realm, Entity.objects.filter(realm=realm))
         except Exception as e:
             self.message_user(request, _("Graph update failed: %s" % e))
         else:

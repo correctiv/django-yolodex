@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+from django.conf import settings
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
@@ -38,6 +39,10 @@ class Realm(models.Model):
 
     def get_absolute_url(self):
         return reverse('yolodex:overview', current_app=self.slug)
+
+    def get_languages(self):
+        fallback = ','.join([x[0] for x in settings.LANGUAGES])
+        return self.settings.get('languages', fallback).split(',')
 
     def get_types(self):
         return {

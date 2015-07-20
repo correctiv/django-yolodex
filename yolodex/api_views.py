@@ -76,22 +76,23 @@ class RealmApiMixin(object):
         return self.realm
 
 
-def make_cache_key(realm, obj, kind='entity'):
-    return 'yolodex:api:{kind}:network:{realm}:{obj}'.format(
+def make_cache_key(lang, realm, obj, kind='entity'):
+    return '{lang}:yolodex:api:{kind}:network:{realm}:{obj}'.format(
+        lang=lang,
         kind=kind,
         realm=realm.pk,
         obj=obj.pk
     )
 
 
-def clear_network_cache(realm, entities):
+def clear_network_cache(lang, realm, entities):
     types = set()
     cache_keys = set()
     for e in entities:
         types.add(e.type)
-        cache_keys.add(make_cache_key(realm, e, kind='entity'))
+        cache_keys.add(make_cache_key(lang, realm, e, kind='entity'))
     for t in types:
-        cache_keys.add(make_cache_key(realm, t, kind='entitytype'))
+        cache_keys.add(make_cache_key(lang, realm, t, kind='entitytype'))
     cache.delete_many(cache_keys)
 
 
@@ -122,8 +123,8 @@ class EntityViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         """
         obj = self.get_object()
         realm = self.get_realm(request)
-
-        cache_key = make_cache_key(realm, obj, kind='entity')
+        lang = request.LANGUAGE_CODE
+        cache_key = make_cache_key(lang, realm, obj, kind='entity')
 
         network = cache.get(cache_key)
         if network is None:
@@ -160,8 +161,8 @@ class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         """
         obj = self.get_object()
         realm = self.get_realm(request)
-
-        cache_key = make_cache_key(realm, obj, kind='entitytype')
+        lang = request.LANGUAGE_CODE
+        cache_key = make_cache_key(lang, realm, obj, kind='entitytype')
 
         network = cache.get(cache_key)
         if network is None:
