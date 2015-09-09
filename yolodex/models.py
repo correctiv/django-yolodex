@@ -14,6 +14,12 @@ from .network import make_network
 from .utils import get_sources
 
 
+class PublishedRealmManager(models.Manager):
+    def get_queryset(self):
+        return (super(PublishedRealmManager, self)
+                .get_queryset().filter(is_public=True))
+
+
 @python_2_unicode_compatible
 class Realm(models.Model):
     name = models.CharField(max_length=255)
@@ -25,10 +31,14 @@ class Realm(models.Model):
     edge_url = models.CharField(max_length=255, blank=True)
 
     created_on = models.DateTimeField()
+    is_public = models.BooleanField(default=False)
     version = models.IntegerField(default=0)
 
     updated_on = models.DateTimeField(null=True, blank=True)
     corrections = models.TextField(blank=True)
+
+    objects = models.Manager()
+    published = PublishedRealmManager()
 
     class Meta:
         verbose_name = _('realm')
