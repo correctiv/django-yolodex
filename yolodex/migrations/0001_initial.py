@@ -2,6 +2,8 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+from django.contrib.postgres.operations import HStoreExtension
+
 import django.db.models.deletion
 import django_hstore.fields
 
@@ -12,6 +14,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        HStoreExtension(),
         migrations.CreateModel(
             name='Entity',
             fields=[
