@@ -6,8 +6,8 @@ from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.template import Template, Context
 from django.utils.html import format_html
+from django.contrib.postgres.fields import HStoreField
 
-from django_hstore import hstore
 from parler.models import TranslatableModel, TranslatedFields
 
 from .network import make_network
@@ -25,7 +25,7 @@ class Realm(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
 
-    settings = hstore.DictionaryField(blank=True)
+    settings = HStoreField(blank=True)
 
     node_url = models.CharField(max_length=255, blank=True)
     edge_url = models.CharField(max_length=255, blank=True)
@@ -37,7 +37,6 @@ class Realm(models.Model):
     updated_on = models.DateTimeField(null=True, blank=True)
     corrections = models.TextField(blank=True)
 
-    objects = models.Manager()
     published = PublishedRealmManager()
 
     class Meta:
@@ -74,7 +73,7 @@ class EntityType(TranslatableModel):
         slug=models.SlugField(max_length=255),
         template=models.TextField(blank=True)
     )
-    settings = hstore.DictionaryField(blank=True)
+    settings = HStoreField(blank=True)
 
     class Meta:
         verbose_name = _('entity type')
@@ -107,9 +106,7 @@ class Entity(models.Model):
     in_degree = models.IntegerField(null=True, blank=True)
     out_degree = models.IntegerField(null=True, blank=True)
 
-    data = hstore.DictionaryField(blank=True)
-
-    objects = hstore.HStoreManager()
+    data = HStoreField()
 
     class Meta:
         unique_together = ('realm', 'slug')
@@ -147,7 +144,7 @@ class RelationshipType(TranslatableModel):
         reverse_verb=models.CharField(max_length=255, blank=True)
     )
 
-    settings = hstore.DictionaryField(blank=True)
+    settings = HStoreField()
 
     class Meta:
         verbose_name = _('relationship type')
@@ -202,9 +199,7 @@ class Relationship(models.Model):
     sources = models.TextField(blank=True)
     version = models.IntegerField(default=0)
 
-    data = hstore.DictionaryField(blank=True)
-
-    objects = hstore.HStoreManager()
+    data = HStoreField(blank=True)
 
     class Meta:
         verbose_name = _('relationship')
