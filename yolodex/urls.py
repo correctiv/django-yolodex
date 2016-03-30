@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.utils.translation import ugettext_lazy as _
 
 from .views import (
@@ -36,4 +36,4 @@ entity_urls = [
 
 urlpatterns = router.urls
 
-urlpatterns += patterns('', *entity_urls)
+urlpatterns += entity_urls
