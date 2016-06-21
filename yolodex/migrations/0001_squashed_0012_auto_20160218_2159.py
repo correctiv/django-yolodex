@@ -6,7 +6,6 @@ import django.contrib.postgres.fields.hstore
 import django.contrib.postgres.operations
 from django.db import migrations, models
 import django.db.models.deletion
-import django_hstore.fields
 
 
 class Migration(migrations.Migration):
@@ -25,7 +24,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=255)),
                 ('slug', models.SlugField(max_length=255)),
-                ('data', django_hstore.fields.DictionaryField()),
+                ('data', django.contrib.postgres.fields.hstore.HStoreField(blank=True)),
             ],
             options={
                 'verbose_name_plural': 'Entities',
@@ -73,7 +72,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('directed', models.BooleanField(default=True)),
-                ('data', django_hstore.fields.DictionaryField()),
+                ('data', django.contrib.postgres.fields.hstore.HStoreField(blank=True)),
                 ('realm', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='yolodex.Realm')),
                 ('source', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='source_relationships', to='yolodex.Entity')),
                 ('target', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='target_relationships', to='yolodex.Entity')),
@@ -136,11 +135,6 @@ class Migration(migrations.Migration):
             name='type',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='yolodex.EntityType'),
         ),
-        migrations.AlterField(
-            model_name='entity',
-            name='data',
-            field=django_hstore.fields.DictionaryField(blank=True),
-        ),
         migrations.AddField(
             model_name='entity',
             name='text',
@@ -153,22 +147,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='entitytype',
             name='settings',
-            field=django_hstore.fields.DictionaryField(blank=True),
+            field=django.contrib.postgres.fields.hstore.HStoreField(blank=True),
         ),
         migrations.AddField(
             model_name='relationshiptype',
             name='settings',
-            field=django_hstore.fields.DictionaryField(blank=True),
-        ),
-        migrations.AlterField(
-            model_name='relationship',
-            name='data',
-            field=django_hstore.fields.DictionaryField(blank=True),
+            field=django.contrib.postgres.fields.hstore.HStoreField(blank=True),
         ),
         migrations.AddField(
             model_name='realm',
             name='settings',
-            field=django_hstore.fields.DictionaryField(blank=True),
+            field=django.contrib.postgres.fields.hstore.HStoreField(blank=True),
         ),
         migrations.AlterModelOptions(
             name='entity',
@@ -262,30 +251,5 @@ class Migration(migrations.Migration):
             model_name='realm',
             name='is_public',
             field=models.BooleanField(default=False),
-        ),
-        migrations.AlterField(
-            model_name='entity',
-            name='data',
-            field=django.contrib.postgres.fields.hstore.HStoreField(),
-        ),
-        migrations.AlterField(
-            model_name='entitytype',
-            name='settings',
-            field=django.contrib.postgres.fields.hstore.HStoreField(blank=True),
-        ),
-        migrations.AlterField(
-            model_name='realm',
-            name='settings',
-            field=django.contrib.postgres.fields.hstore.HStoreField(blank=True),
-        ),
-        migrations.AlterField(
-            model_name='relationship',
-            name='data',
-            field=django.contrib.postgres.fields.hstore.HStoreField(blank=True),
-        ),
-        migrations.AlterField(
-            model_name='relationshiptype',
-            name='settings',
-            field=django.contrib.postgres.fields.hstore.HStoreField(),
         ),
     ]
