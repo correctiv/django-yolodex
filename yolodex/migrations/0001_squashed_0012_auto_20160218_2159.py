@@ -11,8 +11,6 @@ import django_hstore.fields
 
 class Migration(migrations.Migration):
 
-    replaces = [(b'yolodex', '0001_initial'), (b'yolodex', '0002_auto_20150612_1450'), (b'yolodex', '0003_entitytypetranslation_template'), (b'yolodex', '0004_auto_20150622_1206'), (b'yolodex', '0005_entitytypetranslation_name_plural'), (b'yolodex', '0006_auto_20150624_1750'), (b'yolodex', '0007_auto_20150701_1503'), (b'yolodex', '0008_auto_20150701_1626'), (b'yolodex', '0009_auto_20150708_1035'), (b'yolodex', '0010_auto_20150708_1129'), (b'yolodex', '0011_realm_is_public'), (b'yolodex', '0012_auto_20160218_2159')]
-
     initial = True
 
     dependencies = [
