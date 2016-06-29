@@ -285,7 +285,9 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   }
 
   function getFontIcon(icon){
-    return String.fromCodePoint(parseInt(icon.substring(1), 16));
+    if (icon) {
+      return String.fromCodePoint(parseInt(icon.substring(1), 16));
+    }
   }
 
   function getNodeIcon(d) {
@@ -309,7 +311,7 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
   }
 
   function getNodeImportance(d) {
-    return d.degree * (getNodeTypeSetting(d, 'importance-factor') || 1);
+    return (d.degree || 1) * +(getNodeTypeSetting(d, 'importance-factor') || 1);
   }
 
   d3.json(graphUrl, function (error, graph) {
@@ -348,9 +350,15 @@ function EntityGraph(subjectId, containerId, graphUrl, options) {
       for (var type in types.node) {
         type = types.node[type];
         var icon = type.settings.icon;
-        icon = getFontIcon(icon);
+        if (icon) {
+          icon = getFontIcon(icon);
+          icon = '<span class="icon-legend">' + icon + '</span>';
+        }
+        if (!icon) {
+          icon = '';
+        }
         $('#' + options.legendContainerId).append(
-          '<li><span class="icon-legend">' + icon + '</span>' + type.name + '</li>'
+          '<li>' + icon + type.name + '</li>'
         );
       }
     } else {
