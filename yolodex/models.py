@@ -37,6 +37,7 @@ class Realm(models.Model):
     updated_on = models.DateTimeField(null=True, blank=True)
     corrections = models.TextField(blank=True)
 
+    objects = models.Manager()
     published = PublishedRealmManager()
 
     class Meta:
@@ -144,7 +145,7 @@ class RelationshipType(TranslatableModel):
         reverse_verb=models.CharField(max_length=255, blank=True)
     )
 
-    settings = HStoreField()
+    settings = HStoreField(blank=True)
 
     class Meta:
         verbose_name = _('relationship type')
