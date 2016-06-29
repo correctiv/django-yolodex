@@ -36,6 +36,7 @@ class RealmAdmin(admin.ModelAdmin):
                 realm.node_url, realm.edge_url,
                 update=True,
             )
+            yimp.assign_degree()
             for lang in realm.get_languages():
                 clear_network_cache(lang, realm, Entity.objects.filter(realm=realm))
         except Exception as e:
