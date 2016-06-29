@@ -47,7 +47,7 @@ class RealmAdmin(admin.ModelAdmin):
 
 
 class EntityTypeAdmin(TranslatableAdmin):
-    list_display = ('name', 'name_plural')
+    list_display = ('name', 'name_plural',)
 
     def get_prepopulated_fields(self, request, obj=None):
         return {
