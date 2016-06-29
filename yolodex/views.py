@@ -68,7 +68,8 @@ class EntityListView(BaseRealmMixin, ListView):
 
     def get(self, request, *args, **kwargs):
         try:
-            self.type = EntityType.objects.translated(slug=kwargs['type']).get()
+            self.type = EntityType.objects.translated(
+                        slug=kwargs['type']).filter(realms=self.get_realm()).get()
         except EntityType.DoesNotExist:
             raise Http404
         return super(EntityListView, self).get(request, *args, **kwargs)
