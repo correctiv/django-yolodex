@@ -20,6 +20,17 @@ from .utils import get_raw_sources, get_absolute_media_path, mkdir_p
 logger = logging.getLogger(__name__)
 
 
+class YolodexImportError(Exception):
+    def __init__(self, kind, lineno, data, exc):
+        self.kind = kind
+        self.lineno = lineno
+        self.exc = exc
+        self.data = data
+
+    def __str__(self):
+        return '%s:%s - (%s) %s' % (self.kind, self.lineno, self.data, self.exc)
+
+
 def get_from_cache_or_create(type_slug, klass, cache, realm):
     if type_slug in cache:
         typ = cache[type_slug]
@@ -32,6 +43,7 @@ def get_from_cache_or_create(type_slug, klass, cache, realm):
             typ.set_current_language('en')
             typ.name = type_slug
             typ.slug = slugify(type_slug)
+            typ.settings = {}
             typ.save()
             typ.realms.add(realm)
         cache[type_slug] = typ
@@ -68,11 +80,11 @@ def update_or_create(klass, search_dict, attr_dict):
 
 
 class YolodexImporter(object):
-    entity_type_cache = {}
-    rel_typ_cache = {}
-    entity_cache = {}
-
     def __init__(self, realm):
+        self.entity_type_cache = {}
+        self.rel_typ_cache = {}
+        self.entity_cache = {}
+
         self.realm = realm
         self.stats = {
             'entity_created': 0,
@@ -130,15 +142,21 @@ class YolodexImporter(object):
             entity.save()
 
     def create_nodes(self, nodes, media_dir=None):
-        for node in nodes:
-            entity = self.create_entity(node)
+        for i, node in enumerate(nodes):
+            try:
+                entity = self.create_entity(node)
+            except Exception as e:
+                raise YolodexImportError('nodes', i, node, e)
             if entity is not None and media_dir is not None:
                 raw_sources = get_raw_sources(self.realm, entity.sources)
                 self.import_sources([s[1] for s in raw_sources if s[0] == 'file'], media_dir)
 
     def create_relationships(self, edges, media_dir=None):
-        for edge in edges:
-            rel = self.create_relationship(edge)
+        for i, edge in enumerate(edges):
+            try:
+                rel = self.create_relationship(edge)
+            except Exception as e:
+                raise YolodexImportError('edges', i, edge, e)
             if rel is not None and media_dir is not None:
                 raw_sources = get_raw_sources(self.realm, rel.sources)
                 self.import_sources([s[1] for s in raw_sources if s[0] == 'file'], media_dir)
@@ -167,7 +185,7 @@ class YolodexImporter(object):
 
     def create_entity(self, node):
         name = node.pop('name')
-        slug = node.pop('id', slugify(name))
+        slug = slugify(node.pop('id', name))
         if not slug:
             return
         type_slug = node.pop('type', None)
@@ -196,11 +214,11 @@ class YolodexImporter(object):
         return entity
 
     def create_relationship(self, edge):
-        source_slug = edge.pop('source')
+        source_slug = slugify(edge.pop('source'))
         if not source_slug:
             return
         source = self.entity_cache[source_slug]
-        target_slug = edge.pop('target')
+        target_slug = slugify(edge.pop('target'))
         if not target_slug:
             return
         target = self.entity_cache[target_slug]
