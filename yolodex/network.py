@@ -1,4 +1,5 @@
 import json
+import functools
 import operator
 
 from django.db.models import Q
@@ -34,7 +35,7 @@ def make_network(initial_qs, level=2, include_self=True,
             Q(target_id__in=new_entities)
         ]
         rel_filter_func = lambda x, y: getattr(operator, rel_filter_op)(x, y)
-        rel_filter = reduce(rel_filter_func, rel_filter_operands)
+        rel_filter = functools.reduce(rel_filter_func, rel_filter_operands)
         rels = list(Relationship.objects.filter(rel_filter)
                     .distinct('id')
                     .select_related('source', 'target'))
