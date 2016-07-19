@@ -1,5 +1,6 @@
 from django.conf.urls import url
 from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.clickjacking import xframe_options_exempt
 
 from .views import (
     RealmView,
@@ -30,7 +31,7 @@ entity_urls = [
         EntityDetailView.as_view(),
         name='entity_detail'),
     url(r'^(?P<type>[\w-]+)/(?P<slug>[\w-]+)/embed/$',
-        EntityDetailNetworkEmbedView.as_view(),
+        xframe_options_exempt(EntityDetailNetworkEmbedView.as_view()),
         name='entity_detail_embed'),
 ]
 
