@@ -143,9 +143,11 @@ class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         realm = self.get_realm(self.request)
         return realm.entitytype_set.all()
 
-    def make_entity_filter(self, obj):
+    def make_entity_filter(self, obj, only_entitytype):
         def entity_filter(entity, rels):
             connectedness = 0
+            if only_entitytype and entity.type_id != obj.pk:
+                return False
             for r in rels:
                 if undirected_comp(
                         lambda a, b: a == entity and b.type_id == obj.pk, r):
@@ -163,11 +165,12 @@ class EntityTypeViewSet(RealmApiMixin, viewsets.ReadOnlyModelViewSet):
         realm = self.get_realm(request)
         lang = request.LANGUAGE_CODE
         cache_key = make_cache_key(lang, realm, obj, kind='entitytype')
+        only_entitytype = realm.settings.get('entity-type-only', False)
 
         network = cache.get(cache_key)
         if network is None:
             qs = Entity.objects.filter(realm=realm, type=obj)
-            entity_filter = self.make_entity_filter(obj)
+            entity_filter = self.make_entity_filter(obj, only_entitytype)
             network = make_network(qs, level=1, entity_filter=entity_filter)
             network = network.to_dict(realm=realm)
             cache.set(cache_key, network, None)
